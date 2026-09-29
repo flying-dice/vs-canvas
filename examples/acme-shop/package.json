@@ -1,0 +1,9 @@
+{
+  "name": "acme-shop",
+  "private": true,
+  "version": "0.4.2",
+  "description": "Demo e-commerce codebase used to showcase VS Canvas",
+  "scripts": {
+    "typecheck": "tsc -p . --noEmit"
+  }
+}

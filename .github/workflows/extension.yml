@@ -1,0 +1,98 @@
+name: Extension
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Test, build and package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # A tag like v0.2.0 sets the extension version, so the VSIX matches the release.
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: npm version --no-git-tag-version --allow-same-version "${GITHUB_REF_NAME#v}"
+
+      - run: npm test
+      - run: npm run check
+      - run: npm run build
+
+      - name: Lint example canvases
+        run: node dist/canvas-lint.js --root examples/acme-shop
+
+      # Relative README links (MEDIA.md, docs/) are rewritten to this repository so they work on the Marketplace.
+      - name: Package VSIX
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          VSIX="vs-canvas-${VERSION}.vsix"
+          npx vsce package --no-dependencies \
+            --baseContentUrl "https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}" \
+            --baseImagesUrl "https://github.com/${GITHUB_REPOSITORY}/raw/${GITHUB_SHA}" \
+            --out "$VSIX"
+          echo "VSIX=$VSIX" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vsix
+          path: ${{ env.VSIX }}
+          if-no-files-found: error
+
+  release:
+    name: GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: vsix
+
+      - name: Create release with the VSIX attached
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" ./*.vsix --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
+
+  # Optional: publishes the same VSIX to the Marketplace when a VSCE_PAT secret exists. Without the secret the step
+  # is skipped and the VSIX from the release can be uploaded by hand at https://marketplace.visualstudio.com/manage.
+  publish:
+    name: Publish to the Marketplace
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: vsix
+
+      - uses: actions/setup-node@v7
+        if: env.VSCE_PAT != ''
+        with:
+          node-version: 24
+
+      - name: Publish
+        if: env.VSCE_PAT != ''
+        run: npx --yes @vscode/vsce@4 publish --packagePath ./*.vsix

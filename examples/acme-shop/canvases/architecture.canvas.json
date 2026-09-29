@@ -1,0 +1,659 @@
+{
+  "nodes": [
+    {
+      "id": "group-16",
+      "type": "group",
+      "x": 0,
+      "y": 0,
+      "width": 2384,
+      "height": 476,
+      "label": "acme-shop",
+      "sublabel": "Software System",
+      "shape": "c4.boundary"
+    },
+    {
+      "id": "shape-1",
+      "type": "text",
+      "x": 40,
+      "y": 168,
+      "width": 224,
+      "height": 176,
+      "text": "Shopper\nBuys things from the store",
+      "variant": "shape",
+      "shape": "c4.person"
+    },
+    {
+      "id": "shape-2",
+      "type": "text",
+      "x": 424,
+      "y": 180,
+      "width": 256,
+      "height": 152,
+      "text": "Web shop\nCart and checkout UI",
+      "variant": "shape",
+      "shape": "c4.container-web",
+      "fields": {
+        "technology": "TSX"
+      }
+    },
+    {
+      "id": "shape-3",
+      "type": "text",
+      "x": 840,
+      "y": 180,
+      "width": 256,
+      "height": 152,
+      "text": "API gateway\nRoutes and authenticates requests",
+      "variant": "shape",
+      "shape": "c4.container",
+      "fields": {
+        "technology": "Node.js"
+      }
+    },
+    {
+      "id": "shape-4",
+      "type": "text",
+      "x": 1256,
+      "y": 180,
+      "width": 256,
+      "height": 152,
+      "text": "Orders service\nPlaces orders",
+      "variant": "shape",
+      "shape": "c4.container",
+      "fields": {
+        "technology": "Node.js"
+      }
+    },
+    {
+      "id": "shape-5",
+      "type": "text",
+      "x": 1672,
+      "y": 100,
+      "width": 256,
+      "height": 152,
+      "text": "Payments service\nCharges cards, retries on timeout",
+      "variant": "shape",
+      "shape": "c4.container",
+      "fields": {
+        "technology": "Node.js"
+      }
+    },
+    {
+      "id": "shape-6",
+      "type": "text",
+      "x": 2088,
+      "y": 76,
+      "width": 240,
+      "height": 160,
+      "text": "Ledger\nFinancial entries",
+      "variant": "shape",
+      "shape": "c4.container-db",
+      "fields": {
+        "technology": "PostgreSQL"
+      }
+    },
+    {
+      "id": "shape-7",
+      "type": "text",
+      "x": 1672,
+      "y": 300,
+      "width": 256,
+      "height": 112,
+      "text": "Event bus\nOrder and payment events",
+      "variant": "shape",
+      "shape": "c4.container-queue",
+      "fields": {
+        "technology": "In-memory"
+      }
+    },
+    {
+      "id": "shape-8",
+      "type": "text",
+      "x": 2088,
+      "y": 284,
+      "width": 256,
+      "height": 152,
+      "text": "Card provider\nThird-party payments API",
+      "variant": "shape",
+      "shape": "c4.system-external"
+    },
+    {
+      "id": "shape-17",
+      "type": "text",
+      "x": 200,
+      "y": 612,
+      "width": 160,
+      "height": 56,
+      "text": "Charge requested",
+      "variant": "shape",
+      "shape": "flowchart.terminator"
+    },
+    {
+      "id": "shape-18",
+      "type": "text",
+      "x": 192,
+      "y": 828,
+      "width": 176,
+      "height": 72,
+      "text": "provider.charge(amount, card)",
+      "variant": "shape",
+      "shape": "flowchart.process"
+    },
+    {
+      "id": "shape-19",
+      "type": "text",
+      "x": 192,
+      "y": 1060,
+      "width": 176,
+      "height": 112,
+      "text": "Timed out?",
+      "variant": "shape",
+      "shape": "flowchart.decision"
+    },
+    {
+      "id": "shape-20",
+      "type": "text",
+      "x": 104,
+      "y": 1332,
+      "width": 176,
+      "height": 112,
+      "text": "Attempts left?",
+      "variant": "shape",
+      "shape": "flowchart.decision"
+    },
+    {
+      "id": "shape-21",
+      "type": "text",
+      "x": 0,
+      "y": 1604,
+      "width": 144,
+      "height": 72,
+      "text": "Back off",
+      "variant": "shape",
+      "shape": "flowchart.delay"
+    },
+    {
+      "id": "shape-22",
+      "type": "text",
+      "x": 328,
+      "y": 1332,
+      "width": 128,
+      "height": 96,
+      "text": "Write ledger",
+      "variant": "shape",
+      "shape": "flowchart.database"
+    },
+    {
+      "id": "shape-23",
+      "type": "text",
+      "x": 192,
+      "y": 1604,
+      "width": 160,
+      "height": 56,
+      "text": "Charge failed",
+      "variant": "shape",
+      "shape": "flowchart.terminator"
+    },
+    {
+      "id": "shape-24",
+      "type": "text",
+      "x": 400,
+      "y": 1604,
+      "width": 160,
+      "height": 56,
+      "text": "Charged",
+      "variant": "shape",
+      "shape": "flowchart.terminator"
+    },
+    {
+      "id": "text-33",
+      "type": "text",
+      "x": 0,
+      "y": 544,
+      "width": 560,
+      "height": 44,
+      "text": "# chargeWithRetry",
+      "variant": "plain"
+    },
+    {
+      "id": "shape-34",
+      "type": "text",
+      "x": 2600,
+      "y": 160,
+      "width": 224,
+      "height": 160,
+      "text": "Order",
+      "variant": "shape",
+      "shape": "uml.class",
+      "fields": {
+        "attributes": [
+          "+ id: string",
+          "+ total: Money",
+          "+ status: OrderStatus"
+        ],
+        "methods": [
+          "+ place(): void"
+        ]
+      }
+    },
+    {
+      "id": "shape-35",
+      "type": "text",
+      "x": 2984,
+      "y": 56,
+      "width": 224,
+      "height": 160,
+      "text": "Charge",
+      "variant": "shape",
+      "shape": "uml.class",
+      "fields": {
+        "attributes": [
+          "+ id: string",
+          "+ idempotencyKey: string",
+          "+ status: ChargeStatus"
+        ],
+        "methods": [
+          "+ succeed(): void",
+          "+ fail(reason): void"
+        ]
+      }
+    },
+    {
+      "id": "shape-36",
+      "type": "text",
+      "x": 3368,
+      "y": 264,
+      "width": 224,
+      "height": 128,
+      "text": "PaymentProvider",
+      "variant": "shape",
+      "shape": "uml.interface",
+      "fields": {
+        "methods": [
+          "+ charge(req): Promise<Result>"
+        ]
+      }
+    },
+    {
+      "id": "shape-37",
+      "type": "text",
+      "x": 2984,
+      "y": 264,
+      "width": 224,
+      "height": 160,
+      "text": "SimulatedProvider",
+      "variant": "shape",
+      "shape": "uml.class",
+      "fields": {
+        "methods": [
+          "+ charge(req): Promise<Result>"
+        ]
+      }
+    },
+    {
+      "id": "shape-38",
+      "type": "text",
+      "x": 3368,
+      "y": 88,
+      "width": 192,
+      "height": 128,
+      "text": "ChargeStatus",
+      "variant": "shape",
+      "shape": "uml.enum",
+      "fields": {
+        "values": [
+          "PENDING",
+          "SUCCEEDED",
+          "FAILED"
+        ]
+      }
+    },
+    {
+      "id": "text-43",
+      "type": "text",
+      "x": 2600,
+      "y": -12,
+      "width": 640,
+      "height": 44,
+      "text": "# Payments model",
+      "variant": "plain"
+    },
+    {
+      "id": "shape-44",
+      "type": "text",
+      "x": 2600,
+      "y": 956,
+      "width": 240,
+      "height": 176,
+      "text": "orders",
+      "variant": "shape",
+      "shape": "erd.entity",
+      "fields": {
+        "columns": [
+          "id uuid PK",
+          "user_id uuid FK",
+          "total numeric",
+          "status text"
+        ]
+      }
+    },
+    {
+      "id": "shape-45",
+      "type": "text",
+      "x": 2960,
+      "y": 956,
+      "width": 240,
+      "height": 176,
+      "text": "charges",
+      "variant": "shape",
+      "shape": "erd.entity",
+      "fields": {
+        "columns": [
+          "id uuid PK",
+          "order_id uuid FK",
+          "idempotency_key text",
+          "status text"
+        ]
+      }
+    },
+    {
+      "id": "shape-46",
+      "type": "text",
+      "x": 3320,
+      "y": 956,
+      "width": 240,
+      "height": 176,
+      "text": "ledger_entries",
+      "variant": "shape",
+      "shape": "erd.entity",
+      "fields": {
+        "columns": [
+          "id uuid PK",
+          "charge_id uuid FK",
+          "amount numeric",
+          "created_at timestamptz"
+        ]
+      }
+    },
+    {
+      "id": "text-49",
+      "type": "text",
+      "x": 2600,
+      "y": 888,
+      "width": 640,
+      "height": 44,
+      "text": "# Ledger schema",
+      "variant": "plain"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-9",
+      "fromNode": "shape-1",
+      "fromSide": "right",
+      "toNode": "shape-2",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "Checks out using",
+      "relation": "c4.uses",
+      "toMarker": "arrow",
+      "lineStyle": "dashed",
+      "routing": "bezier"
+    },
+    {
+      "id": "edge-10",
+      "fromNode": "shape-2",
+      "fromSide": "right",
+      "toNode": "shape-3",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "Places orders",
+      "sublabel": "[JSON/HTTPS]",
+      "relation": "c4.uses",
+      "toMarker": "arrow",
+      "lineStyle": "dashed",
+      "routing": "bezier"
+    },
+    {
+      "id": "edge-11",
+      "fromNode": "shape-3",
+      "fromSide": "right",
+      "toNode": "shape-4",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "Routes to",
+      "relation": "c4.uses",
+      "toMarker": "arrow",
+      "lineStyle": "dashed",
+      "routing": "bezier"
+    },
+    {
+      "id": "edge-12",
+      "fromNode": "shape-4",
+      "fromSide": "right",
+      "toNode": "shape-5",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "Charges via",
+      "relation": "c4.uses",
+      "toMarker": "arrow",
+      "lineStyle": "dashed",
+      "routing": "bezier"
+    },
+    {
+      "id": "edge-13",
+      "fromNode": "shape-5",
+      "fromSide": "right",
+      "toNode": "shape-8",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "Charges card",
+      "sublabel": "[HTTPS]",
+      "relation": "c4.uses",
+      "toMarker": "arrow",
+      "lineStyle": "dashed",
+      "routing": "bezier"
+    },
+    {
+      "id": "edge-14",
+      "fromNode": "shape-5",
+      "fromSide": "right",
+      "toNode": "shape-6",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "Writes entries",
+      "sublabel": "[SQL]",
+      "relation": "c4.uses",
+      "toMarker": "arrow",
+      "lineStyle": "dashed",
+      "routing": "bezier"
+    },
+    {
+      "id": "edge-15",
+      "fromNode": "shape-4",
+      "fromSide": "right",
+      "toNode": "shape-7",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "Publishes OrderPlaced",
+      "relation": "c4.uses",
+      "toMarker": "arrow",
+      "lineStyle": "dashed",
+      "routing": "bezier"
+    },
+    {
+      "id": "edge-25",
+      "fromNode": "shape-17",
+      "fromSide": "bottom",
+      "toNode": "shape-18",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "relation": "flow.next",
+      "toMarker": "arrow",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-26",
+      "fromNode": "shape-18",
+      "fromSide": "bottom",
+      "toNode": "shape-19",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "relation": "flow.next",
+      "toMarker": "arrow",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-27",
+      "fromNode": "shape-19",
+      "fromSide": "bottom",
+      "toNode": "shape-22",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "No",
+      "relation": "flow.next",
+      "toMarker": "arrow",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-28",
+      "fromNode": "shape-19",
+      "fromSide": "bottom",
+      "toNode": "shape-20",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Yes",
+      "relation": "flow.next",
+      "toMarker": "arrow",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-29",
+      "fromNode": "shape-20",
+      "fromSide": "bottom",
+      "toNode": "shape-21",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Yes",
+      "relation": "flow.next",
+      "toMarker": "arrow",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-30",
+      "fromNode": "shape-21",
+      "fromSide": "top",
+      "toNode": "shape-18",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "retry (no idempotency key)",
+      "relation": "flow.next",
+      "toMarker": "arrow",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-31",
+      "fromNode": "shape-20",
+      "fromSide": "bottom",
+      "toNode": "shape-23",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "No",
+      "relation": "flow.next",
+      "toMarker": "arrow",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-32",
+      "fromNode": "shape-22",
+      "fromSide": "bottom",
+      "toNode": "shape-24",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "relation": "flow.next",
+      "toMarker": "arrow",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-39",
+      "fromNode": "shape-34",
+      "fromSide": "right",
+      "fromEnd": "none",
+      "toNode": "shape-35",
+      "toSide": "left",
+      "toEnd": "none",
+      "label": "1..*",
+      "relation": "uml.composition",
+      "fromMarker": "diamond-filled",
+      "toMarker": "none",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-40",
+      "fromNode": "shape-37",
+      "fromSide": "right",
+      "toNode": "shape-36",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "relation": "uml.realization",
+      "toMarker": "triangle",
+      "lineStyle": "dashed",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-41",
+      "fromNode": "shape-35",
+      "fromSide": "right",
+      "toNode": "shape-36",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "charged by",
+      "relation": "uml.dependency",
+      "toMarker": "open-arrow",
+      "lineStyle": "dashed",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-42",
+      "fromNode": "shape-35",
+      "fromSide": "right",
+      "toNode": "shape-38",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "relation": "uml.association",
+      "toMarker": "open-arrow",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-47",
+      "fromNode": "shape-44",
+      "fromSide": "right",
+      "fromEnd": "none",
+      "toNode": "shape-45",
+      "toSide": "left",
+      "toEnd": "none",
+      "relation": "erd.one-to-many",
+      "fromMarker": "crow-one",
+      "toMarker": "crow-many",
+      "routing": "orthogonal"
+    },
+    {
+      "id": "edge-48",
+      "fromNode": "shape-45",
+      "fromSide": "right",
+      "fromEnd": "none",
+      "toNode": "shape-46",
+      "toSide": "left",
+      "toEnd": "none",
+      "relation": "erd.one-to-many",
+      "fromMarker": "crow-one",
+      "toMarker": "crow-many",
+      "routing": "orthogonal"
+    }
+  ],
+  "vsCanvas": {
+    "version": 1,
+    "title": "acme-shop architecture",
+    "kind": "map"
+  }
+}

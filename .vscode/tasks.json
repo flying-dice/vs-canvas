@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "type": "npm", "script": "build", "group": "build", "problemMatcher": [] },
+    {
+      "label": "watch:webview",
+      "type": "npm",
+      "script": "watch:webview",
+      "isBackground": true,
+      "presentation": { "group": "watch", "reveal": "never" },
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^x^" },
+        "background": { "activeBegins": true, "beginsPattern": "build started", "endsPattern": "built in|Build failed" }
+      }
+    },
+    {
+      "label": "watch:extension",
+      "type": "npm",
+      "script": "watch:extension",
+      "isBackground": true,
+      "presentation": { "group": "watch", "reveal": "never" },
+      "problemMatcher": {
+        "owner": "esbuild",
+        "pattern": { "regexp": "^x^" },
+        "background": { "activeBegins": true, "beginsPattern": "\\[watch\\] build started", "endsPattern": "\\[watch\\] build finished" }
+      }
+    },
+    {
+      "label": "watch",
+      "dependsOn": ["watch:webview", "watch:extension"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    }
+  ]
+}

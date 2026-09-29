@@ -1,0 +1,32 @@
+Support ticket #48213: "Customer charged twice for order 812 ($49.00 x2 on Visa ending 4242)"
+Reported by: maria.ortega@example.com (u_204)   Region: WA   Env: production
+Log excerpt from gateway-7d9f6b (paystream incident window 2026-09-28 14:03 UTC)
+
+{"ts":"2026-09-28T14:03:11.204Z","level":"info","scope":"gateway","msg":"request","method":"POST","path":"/orders","userId":"u_204"}
+{"ts":"2026-09-28T14:03:11.231Z","level":"info","scope":"payments.retry","msg":"charging provider","orderId":"812","chargeId":"chg_k3v9x2ab","amount":49}
+{"ts":"2026-09-28T14:03:19.240Z","level":"warn","scope":"payments.retry","msg":"provider timeout, retrying charge","orderId":"812","attempts":1,"elapsedMs":8009}
+{"ts":"2026-09-28T14:03:19.241Z","level":"warn","scope":"paystream","msg":"upstream response arrived after client timeout","providerRef":"ch_8Qm2Lz01","latencyMs":8412,"idempotencyKey":null}
+{"ts":"2026-09-28T14:03:19.497Z","level":"info","scope":"paystream","msg":"charge.succeeded","providerRef":"ch_8Qm2Lz01","amount":49,"card":"4242"}
+{"ts":"2026-09-28T14:03:19.771Z","level":"info","scope":"paystream","msg":"charge.succeeded","providerRef":"ch_9Rn3Ma72","amount":49,"card":"4242"}
+{"ts":"2026-09-28T14:03:19.775Z","level":"info","scope":"ledger","msg":"ledger entry written","entryId":"led_x81kq0pd","orderId":"812","amount":49}
+{"ts":"2026-09-28T14:03:19.780Z","level":"info","scope":"orders","msg":"order placed","orderId":"812","total":49}
+{"ts":"2026-09-28T14:03:24.113Z","level":"warn","scope":"payments.webhooks","msg":"webhook for unknown charge","providerRef":"ch_8Qm2Lz01"}
+
+First failure, captured by the error reporter (ProviderTimeoutError swallowed by the retry loop, then logged):
+
+ProviderTimeoutError: paystream timed out after 8000ms
+    at Timeout._onTimeout (services/shared/timeout.ts:5:43)
+    at listOnTimeout (node:internal/timers:594:17)
+    at process.processTimers (node:internal/timers:529:7)
+    at async chargeWithRetry (services/payments/retry.ts:48:22)
+    at async chargeOrder (services/payments/charge.ts:52:21)
+    at async placeOrder (services/orders/placeOrder.ts:35:18)
+    at async handlePlaceOrder (services/gateway/routes/orders.ts:12:17)
+    at async handleRequest (services/gateway/server.ts:11:12) {
+  code: 'provider_timeout',
+  status: 504
+}
+
+Provider dashboard (paystream) for card 4242, 2026-09-28:
+  ch_8Qm2Lz01  succeeded  $49.00  14:03:19  idempotency_key: (none)
+  ch_9Rn3Ma72  succeeded  $49.00  14:03:19  idempotency_key: (none)

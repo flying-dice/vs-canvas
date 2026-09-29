@@ -1,0 +1,11 @@
+# Ship only the built extension. vsce lets `!` includes override excludes, so include by type rather than all of
+# dist/ (source maps are left out: they are for local debugging and double the package size).
+**
+!dist/**/*.js
+!dist/**/*.css
+!dist/**/*.html
+!package.json
+!README.md
+!LICENSE
+!images/icon.png
+!images/screenshot.png

@@ -1,0 +1,132 @@
+{
+  "nodes": [
+    {
+      "id": "log-1",
+      "type": "text",
+      "x": -65,
+      "y": 0,
+      "width": 900,
+      "height": 420,
+      "text": "Support ticket #48213: \"Customer charged twice for order 812 ($49.00 x2 on Visa ending 4242)\"\nReported by: maria.ortega@example.com (u_204)   Region: WA   Env: production\nLog excerpt from gateway-7d9f6b (paystream incident window 2026-09-28 14:03 UTC)\n\n{\"ts\":\"2026-09-28T14:03:11.204Z\",\"level\":\"info\",\"scope\":\"gateway\",\"msg\":\"request\",\"method\":\"POST\",\"path\":\"/orders\",\"userId\":\"u_204\"}\n{\"ts\":\"2026-09-28T14:03:11.231Z\",\"level\":\"info\",\"scope\":\"payments.retry\",\"msg\":\"charging provider\",\"orderId\":\"812\",\"chargeId\":\"chg_k3v9x2ab\",\"amount\":49}\n{\"ts\":\"2026-09-28T14:03:19.240Z\",\"level\":\"warn\",\"scope\":\"payments.retry\",\"msg\":\"provider timeout, retrying charge\",\"orderId\":\"812\",\"attempts\":1,\"elapsedMs\":8009}\n{\"ts\":\"2026-09-28T14:03:19.241Z\",\"level\":\"warn\",\"scope\":\"paystream\",\"msg\":\"upstream response arrived after client timeout\",\"providerRef\":\"ch_8Qm2Lz01\",\"latencyMs\":8412,\"idempotencyKey\":null}\n{\"ts\":\"2026-09-28T14:03:19.497Z\",\"level\":\"info\",\"scope\":\"paystream\",\"msg\":\"charge.succeeded\",\"providerRef\":\"ch_8Qm2Lz01\",\"amount\":49,\"card\":\"4242\"}\n{\"ts\":\"2026-09-28T14:03:19.771Z\",\"level\":\"info\",\"scope\":\"paystream\",\"msg\":\"charge.succeeded\",\"providerRef\":\"ch_9Rn3Ma72\",\"amount\":49,\"card\":\"4242\"}\n{\"ts\":\"2026-09-28T14:03:19.775Z\",\"level\":\"info\",\"scope\":\"ledger\",\"msg\":\"ledger entry written\",\"entryId\":\"led_x81kq0pd\",\"orderId\":\"812\",\"amount\":49}\n{\"ts\":\"2026-09-28T14:03:19.780Z\",\"level\":\"info\",\"scope\":\"orders\",\"msg\":\"order placed\",\"orderId\":\"812\",\"total\":49}\n{\"ts\":\"2026-09-28T14:03:24.113Z\",\"level\":\"warn\",\"scope\":\"payments.webhooks\",\"msg\":\"webhook for unknown charge\",\"providerRef\":\"ch_8Qm2Lz01\"}\n\nFirst failure, captured by the error reporter (ProviderTimeoutError swallowed by the retry loop, then logged):\n\nProviderTimeoutError: paystream timed out after 8000ms\n    at Timeout._onTimeout (services/shared/timeout.ts:5:43)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)\n    at async chargeWithRetry (services/payments/retry.ts:48:22)\n    at async chargeOrder (services/payments/charge.ts:52:21)\n    at async placeOrder (services/orders/placeOrder.ts:35:18)\n    at async handlePlaceOrder (services/gateway/routes/orders.ts:12:17)\n    at async handleRequest (services/gateway/server.ts:11:12) {\n  code: 'provider_timeout',\n  status: 504\n}\n\nProvider dashboard (paystream) for card 4242, 2026-09-28:\n  ch_8Qm2Lz01  succeeded  $49.00  14:03:19  idempotency_key: (none)\n  ch_9Rn3Ma72  succeeded  $49.00  14:03:19  idempotency_key: (none)\n",
+      "variant": "log",
+      "title": "Customer report: order 812",
+      "errorLines": [
+        9,
+        10,
+        15,
+        17
+      ]
+    },
+    {
+      "id": "code-2",
+      "type": "file",
+      "x": 955,
+      "y": 332,
+      "width": 899,
+      "height": 95,
+      "file": "services/payments/retry.ts",
+      "subpath": "#L35-L64",
+      "display": "code",
+      "lines": [35, 64],
+      "highlights": [
+        {
+          "id": "hl-8",
+          "start": 48,
+          "end": 48,
+          "color": "1",
+          "label": "retry without idempotency key"
+        }
+      ]
+    },
+    {
+      "id": "code-3",
+      "type": "file",
+      "x": -65,
+      "y": 452,
+      "width": 899,
+      "height": 95,
+      "file": "services/payments/charge.ts",
+      "subpath": "#L28-L57",
+      "display": "code",
+      "lines": [28, 57]
+    },
+    {
+      "id": "code-4",
+      "type": "file",
+      "x": -1012,
+      "y": 241,
+      "width": 899,
+      "height": 95,
+      "file": "services/orders/placeOrder.ts",
+      "subpath": "#L15-L44",
+      "display": "code",
+      "lines": [15, 44]
+    },
+    {
+      "id": "finding-9",
+      "type": "text",
+      "x": -1012,
+      "y": 851,
+      "width": 280,
+      "height": 150,
+      "text": "`CheckoutButton` guards with `submitting`, and `chargeOrder` dedupes repeated keys.",
+      "variant": "finding",
+      "title": "Client double-submits",
+      "findingKind": "hypothesis",
+      "status": "ruled-out"
+    },
+    {
+      "id": "finding-10",
+      "type": "text",
+      "x": -65,
+      "y": 1062,
+      "width": 280,
+      "height": 180,
+      "color": "4",
+      "text": "Provider timed out at 3s but had already charged; the retry sends a second charge with no idempotency key.",
+      "variant": "finding",
+      "title": "Retry on timeout re-sends the charge",
+      "findingKind": "hypothesis",
+      "status": "confirmed"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-5",
+      "fromNode": "code-3",
+      "toNode": "code-2",
+      "label": "chargeWithRetry",
+      "fromLine": 52,
+      "toLine": 35
+    },
+    {
+      "id": "edge-6",
+      "fromNode": "code-4",
+      "toNode": "code-3",
+      "label": "chargeOrder",
+      "fromLine": 35,
+      "toLine": 28
+    },
+    {
+      "id": "edge-7",
+      "fromNode": "log-1",
+      "toNode": "code-2",
+      "color": "1",
+      "label": "failing frame",
+      "toLine": 48
+    },
+    {
+      "id": "edge-11",
+      "fromNode": "finding-10",
+      "toNode": "code-2",
+      "color": "1",
+      "label": "root cause",
+      "toLine": 48
+    }
+  ],
+  "vsCanvas": {
+    "version": 1,
+    "title": "Why does checkout charge twice?",
+    "kind": "investigation"
+  }
+}

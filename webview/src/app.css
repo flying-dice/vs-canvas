@@ -1,0 +1,299 @@
+/* The one shadow level, for floating chrome only (design.md). */
+:root {
+  --cv-shadow-float: 0 4px 16px rgb(0 0 0 / 0.28);
+}
+body.vscode-light {
+  --cv-shadow-float: 0 4px 16px rgb(0 0 0 / 0.12);
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--vscode-editor-background, #1e1e1e);
+  color: var(--vscode-editor-foreground, #d4d4d4);
+  font-family: var(--vscode-font-family, system-ui, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+}
+
+/* Map xyflow variables onto VS Code theme tokens. `div.svelte-flow` beats the library's `.svelte-flow` / `.dark` rules. */
+div.svelte-flow {
+  --xy-background-color: var(--vscode-editor-background, #1e1e1e);
+  --xy-background-pattern-color: var(--vscode-editorLineNumber-foreground, #555);
+  --xy-edge-stroke: var(--vscode-descriptionForeground, #888);
+  --xy-edge-stroke-selected: var(--vscode-focusBorder, #007fd4);
+  --xy-edge-stroke-width: 2;
+  --xy-edge-label-background-color: var(--vscode-editorWidget-background, #252526);
+  --xy-edge-label-color: var(--vscode-editor-foreground, #ccc);
+  --xy-connectionline-stroke: var(--vscode-focusBorder, #007fd4);
+  --xy-minimap-background-color: var(--vscode-editorWidget-background, #252526);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--vscode-editor-background, #1e1e1e) 70%, transparent);
+  --xy-minimap-node-background-color: var(--vscode-editorLineNumber-foreground, #666);
+  --xy-minimap-node-stroke-color: transparent;
+  --xy-controls-button-background-color: var(--vscode-editorWidget-background, #252526);
+  --xy-controls-button-background-color-hover: var(--vscode-toolbar-hoverBackground, #333);
+  --xy-controls-button-color: var(--vscode-editor-foreground, #ccc);
+  --xy-controls-button-color-hover: var(--vscode-editor-foreground, #fff);
+  --xy-controls-button-border-color: var(--vscode-editorWidget-border, #454545);
+  --xy-controls-box-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.25);
+  --xy-handle-background-color: var(--vscode-descriptionForeground, #888);
+  --xy-handle-border-color: var(--vscode-editor-background, #1e1e1e);
+  --xy-attribution-background-color: transparent;
+  --xy-node-background-color: var(--vscode-editorWidget-background, #252526);
+  --xy-node-color: var(--vscode-editor-foreground, #ccc);
+  --xy-node-border: 1px solid var(--vscode-editorWidget-border, #454545);
+  --xy-selection-background-color: color-mix(in srgb, var(--vscode-focusBorder, #007fd4) 15%, transparent);
+  --xy-selection-border: 1px dotted var(--vscode-focusBorder, #007fd4);
+  background: var(--vscode-editor-background, #1e1e1e);
+}
+
+.svelte-flow__controls-button svg {
+  fill: currentColor;
+}
+
+.svelte-flow__edge-textbg {
+  stroke: var(--vscode-editorWidget-border, transparent);
+}
+
+/* Handles: invisible until the node is hovered / selected or a connection is being dragged. 8px dots in the focus
+   colour that grow to 12px under the pointer. Anchored line handles (an edge starts / ends there) stay visible. */
+.svelte-flow__handle.h-side,
+.svelte-flow__handle.h-line {
+  width: 8px;
+  height: 8px;
+  min-width: 0;
+  min-height: 0;
+  border: 1.5px solid var(--vscode-editor-background, #1e1e1e);
+  background: var(--vscode-focusBorder, #007fd4);
+  opacity: 0;
+  transition:
+    opacity 100ms ease,
+    width 100ms ease,
+    height 100ms ease;
+}
+.svelte-flow__handle.h-line {
+  top: 50%;
+}
+.svelte-flow__handle.h-line.svelte-flow__handle-left {
+  left: -4px;
+}
+.svelte-flow__handle.h-line.svelte-flow__handle-right {
+  right: -4px;
+}
+.svelte-flow__handle.h-line.anchored {
+  opacity: 0.85;
+}
+.svelte-flow__node:hover .svelte-flow__handle.h-side,
+.svelte-flow__node.selected .svelte-flow__handle.h-side,
+.wrap.connecting .svelte-flow__handle.h-side,
+.svelte-flow__handle.h-side.connectingfrom,
+.svelte-flow__handle.h-side.connectingto,
+.svelte-flow__node .row:hover > .svelte-flow__handle.h-line,
+.svelte-flow__handle.h-line.connectingfrom {
+  opacity: 1;
+}
+.svelte-flow__handle.h-side:hover,
+.svelte-flow__handle.h-line:hover,
+.svelte-flow__handle.h-side.connectingto {
+  width: 12px;
+  height: 12px;
+}
+
+/* Marquee: a focus-coloured rectangle. */
+.svelte-flow__selection {
+  border-radius: 2px;
+}
+
+/* Flow playback: everything that is not part of the flow steps back (smooth 200ms, restored on stop). */
+.svelte-flow__node,
+.svelte-flow__edge {
+  transition: opacity 200ms ease;
+}
+.wrap.flow-active .svelte-flow__node:not(.participant):not(.group-node) {
+  opacity: 0.55;
+}
+.wrap.flow-active .svelte-flow__edge:not(.participant) {
+  opacity: 0.35;
+}
+
+/* JSON Canvas groups are spatial: the frame is click-through, only the label tab is interactive. */
+.svelte-flow__node.group-node {
+  pointer-events: none !important;
+}
+
+/* Resizer chrome in VS Code colors */
+.svelte-flow__resize-control.line {
+  border-color: var(--vscode-focusBorder, #007fd4);
+}
+.svelte-flow__resize-control.handle {
+  width: 8px;
+  height: 8px;
+  background: var(--vscode-focusBorder, #007fd4);
+  border: 1px solid var(--vscode-editor-background, #1e1e1e);
+  border-radius: 2px;
+}
+
+/* xyflow styles the built-in `group` node type; GroupFrame draws its own chrome. */
+.svelte-flow__node.svelte-flow__node-group {
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* ---- Motion (durations mirror lib/motion.ts) ---- */
+
+/* New nodes fade in once they are measured (xyflow keeps them visibility:hidden until then). Opacity only:
+   no transform on the wrapper, so handle positions measured at mount stay exact. */
+.svelte-flow__node.node-enter[style*='visibility: visible'] {
+  animation: cv-fade-in 220ms ease-out backwards;
+}
+.svelte-flow__node.node-exit {
+  animation: cv-fade-out 150ms ease-in forwards;
+  pointer-events: none !important;
+}
+.svelte-flow__edge.edge-enter {
+  animation: cv-fade-in 220ms ease-out backwards;
+}
+.svelte-flow__edge.edge-enter:not(.animated) .svelte-flow__edge-path {
+  stroke-dasharray: 1;
+  animation: cv-edge-draw 420ms cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+.svelte-flow__edge.edge-exit {
+  animation: cv-fade-out 150ms ease-in forwards;
+  pointer-events: none;
+}
+/* Issues panel: edges involved in a routing problem. */
+.svelte-flow__edge.lint-warn .svelte-flow__edge-path {
+  stroke: var(--vscode-editorWarning-foreground, #cca700) !important;
+  stroke-width: 2.5;
+  opacity: 0.9;
+}
+/* Node picked from the issues panel. */
+.svelte-flow__node.lint-flash {
+  outline: 2px solid var(--vscode-editorWarning-foreground, #cca700);
+  outline-offset: 3px;
+  border-radius: 8px;
+  animation: cv-flash 1400ms ease-out forwards;
+}
+
+@keyframes cv-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes cv-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes cv-edge-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes cv-flash {
+  0%,
+  55% {
+    outline-color: var(--vscode-editorWarning-foreground, #cca700);
+  }
+  100% {
+    outline-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .svelte-flow__node.node-enter,
+  .svelte-flow__node.node-enter[style*='visibility: visible'],
+  .svelte-flow__edge.edge-enter,
+  .svelte-flow__edge.edge-enter:not(.animated) .svelte-flow__edge-path,
+  .svelte-flow__node.lint-flash {
+    animation: none;
+  }
+  .svelte-flow__node.node-exit,
+  .svelte-flow__edge.edge-exit {
+    animation: none;
+    opacity: 0;
+  }
+  .svelte-flow__edge.animated path {
+    animation: none;
+  }
+  .svelte-flow__handle.h-side,
+  .svelte-flow__handle.h-line,
+  .svelte-flow__node,
+  .svelte-flow__edge {
+    transition: none;
+  }
+}
+
+/* Edge toolbars and label editors float above nodes. */
+.svelte-flow__edge-label:has(.svelte-flow__edge-toolbar),
+.svelte-flow__edge-label:has(.label-input),
+.svelte-flow__edge-label.svelte-flow__edgeupdater {
+  z-index: 2000 !important;
+}
+
+/* Edge labels keep a readable on-screen size when the canvas is zoomed out (--cv-label-scale set on .wrap). */
+.svelte-flow__edge-label:not(.flow-chip):not(:has(.label-input)):not(:has(.svelte-flow__edge-toolbar)) {
+  font-size: calc(11px * var(--cv-label-scale, 1));
+  padding: calc(2px * var(--cv-label-scale, 1)) calc(6px * var(--cv-label-scale, 1));
+  border-radius: 4px;
+}
+
+/* The minimap is a navigation aid, not a permanent fixture: it appears while the viewer pans or zooms (and stays
+   usable while hovered), then fades away so it never covers the board. Hidden, it ignores the pointer. */
+.wrap .svelte-flow__minimap {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms ease 700ms;
+}
+.wrap.moving .svelte-flow__minimap,
+.wrap .svelte-flow__minimap:hover {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wrap .svelte-flow__minimap {
+    transition: none;
+  }
+}
+
+/* Edge labels (and flow data chips) sit above nodes, so an enlarged label is never clipped by a neighbouring card. */
+.svelte-flow__edge-labels {
+  z-index: 1500;
+}
+
+/* Svelte Flow attribution: kept (the library asks for it unless you have a Pro subscription), drawn quietly in the
+   corner in theme colours. The transient minimap sits above it rather than on top of it. */
+.svelte-flow__attribution {
+  padding: 2px 6px;
+  font-size: 10px;
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+}
+.svelte-flow__attribution:hover {
+  opacity: 1;
+}
+.svelte-flow__attribution a {
+  color: var(--vscode-descriptionForeground, #9d9d9d);
+}
+.wrap .svelte-flow__minimap {
+  margin-bottom: 28px;
+}

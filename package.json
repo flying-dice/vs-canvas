@@ -1,0 +1,318 @@
+{
+  "name": "vs-canvas",
+  "displayName": "VS Canvas",
+  "description": "Put your codebase on an infinite canvas: repo maps, bug investigations, data flows and diagrams, built by you or your AI agent.",
+  "version": "0.0.1",
+  "publisher": "flying-dice",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flying-dice/vs-canvas.git"
+  },
+  "homepage": "https://github.com/flying-dice/vs-canvas#readme",
+  "bugs": {
+    "url": "https://github.com/flying-dice/vs-canvas/issues"
+  },
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1B2230",
+    "theme": "dark"
+  },
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "VS Canvas runs a local MCP server that reads and edits workspace files, so it only runs in trusted workspaces."
+    },
+    "virtualWorkspaces": false
+  },
+  "categories": [
+    "Visualization",
+    "AI"
+  ],
+  "keywords": [
+    "canvas",
+    "diagram",
+    "architecture",
+    "code map",
+    "c4",
+    "uml",
+    "flowchart",
+    "mcp",
+    "ai",
+    "visualization"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "onCustomEditor:vsCanvas.canvasEditor"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "vsCanvas.open",
+        "title": "VS Canvas: Open Canvas"
+      },
+      {
+        "command": "vsCanvas.newCanvas",
+        "title": "VS Canvas: New Canvas",
+        "icon": "$(add)"
+      },
+      {
+        "command": "vsCanvas.addCurrentFile",
+        "title": "VS Canvas: Add Current File to Canvas"
+      },
+      {
+        "command": "vsCanvas.setUpClaudeCode",
+        "title": "VS Canvas: Set Up Claude Code for This Workspace"
+      },
+      {
+        "command": "vsCanvas.installAgentSkills",
+        "title": "VS Canvas: Install Agent Skills"
+      },
+      {
+        "command": "vsCanvas.copyMcpUrl",
+        "title": "VS Canvas: Copy MCP Server URL"
+      },
+      {
+        "command": "vsCanvas.openPinned",
+        "title": "Canvas: Open Pinned Map"
+      },
+      {
+        "command": "vsCanvas.pinCanvas",
+        "title": "Pin"
+      },
+      {
+        "command": "vsCanvas.unpinCanvas",
+        "title": "Unpin"
+      },
+      {
+        "command": "vsCanvas.revealCanvas",
+        "title": "Reveal in Explorer"
+      },
+      {
+        "command": "vsCanvas.openCanvasFile",
+        "title": "VS Canvas: Open Canvas File"
+      },
+      {
+        "command": "vsCanvas.openCanvasNode",
+        "title": "VS Canvas: Open Canvas at Node"
+      }
+    ],
+    "configuration": {
+      "title": "VS Canvas",
+      "properties": {
+        "vsCanvas.mcp.port": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null,
+          "markdownDescription": "Port for this window's MCP server (streamable HTTP on 127.0.0.1). Leave empty to use a stable port derived from the workspace folder name (3777\u20133976), so each project keeps its own port. If the port is taken, the next free one is used."
+        },
+        "vsCanvas.claudeCode.mcpJson": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "always",
+            "never"
+          ],
+          "default": "ask",
+          "enumDescriptions": [
+            "Offer once per workspace to add VS Canvas to .mcp.json",
+            "Add it automatically",
+            "Never add it (an existing entry is still kept up to date)"
+          ],
+          "markdownDescription": "Whether to add this window's MCP server to the workspace's `.mcp.json`, so Claude Code run in the project connects to this canvas."
+        },
+        "vsCanvas.canvasDirectory": {
+          "type": "string",
+          "default": "canvases",
+          "description": "Workspace-relative folder where new canvases (*.canvas.json) are created."
+        },
+        "vsCanvas.lint.rules": {
+          "type": "object",
+          "default": {},
+          "description": "Per-rule severity overrides for the canvas linter (Problems panel): rule id -> \"error\" | \"warning\" | \"info\" | \"off\". Example: { \"node-crowded\": \"off\", \"far-outlier\": \"warning\" }.",
+          "additionalProperties": {
+            "enum": [
+              "error",
+              "warning",
+              "info",
+              "off"
+            ]
+          },
+          "propertyNames": {
+            "enum": [
+              "node-overlap",
+              "node-crowded",
+              "group-straddle",
+              "group-label-covered",
+              "edge-through-node",
+              "edge-label-overlap",
+              "edge-crossing",
+              "edge-backwards",
+              "text-overflow",
+              "far-outlier",
+              "group-order",
+              "duplicate-id",
+              "dangling-edge",
+              "invalid-anchor",
+              "highlight-out-of-range",
+              "self-loop",
+              "duplicate-edge",
+              "empty-group",
+              "missing-file",
+              "unknown-shape"
+            ]
+          }
+        },
+        "vsCanvas.codeLens.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show \"On canvas: <title>\" above code that appears on a canvas."
+        }
+      }
+    },
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "vsCanvas.mcp",
+        "label": "VS Canvas"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "vsCanvas.canvasEditor",
+        "displayName": "Canvas",
+        "selector": [
+          {
+            "filenamePattern": "*.canvas.json"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "jsonValidation": [
+      {
+        "fileMatch": "*.canvas.json",
+        "url": "./schemas/canvas.schema.json"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "vsCanvas.canvases",
+          "name": "Canvases"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "vsCanvas.canvases",
+        "contents": "No canvases yet.\n[New canvas](command:vsCanvas.newCanvas)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vsCanvas.openPinned",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "vsCanvas.newCanvas",
+          "when": "view == vsCanvas.canvases",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vsCanvas.pinCanvas",
+          "when": "view == vsCanvas.canvases && viewItem == canvas",
+          "group": "1_pin"
+        },
+        {
+          "command": "vsCanvas.unpinCanvas",
+          "when": "view == vsCanvas.canvases && viewItem == canvas.pinned",
+          "group": "1_pin"
+        },
+        {
+          "command": "vsCanvas.revealCanvas",
+          "when": "view == vsCanvas.canvases && viewItem =~ /^canvas/",
+          "group": "2_reveal"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "vsCanvas.pinCanvas",
+          "when": "false"
+        },
+        {
+          "command": "vsCanvas.unpinCanvas",
+          "when": "false"
+        },
+        {
+          "command": "vsCanvas.revealCanvas",
+          "when": "false"
+        },
+        {
+          "command": "vsCanvas.openCanvasFile",
+          "when": "false"
+        },
+        {
+          "command": "vsCanvas.openCanvasNode",
+          "when": "false"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "dev": "concurrently -k -n webview,ext -c cyan,magenta \"npm:watch:webview\" \"npm:watch:extension\"",
+    "build": "npm run build:webview && npm run build:extension",
+    "build:extension": "node esbuild.mjs",
+    "build:webview": "vite build",
+    "watch:extension": "node esbuild.mjs --watch",
+    "watch:webview": "vite build --watch",
+    "check": "tsc -p tsconfig.extension.json --noEmit && svelte-check --tsconfig ./tsconfig.json",
+    "storybook": "storybook dev -p 6006 --no-open",
+    "build-storybook": "storybook build -o dist-storybook",
+    "package": "npm run build && vsce package --no-dependencies",
+    "test": "vitest run",
+    "lint:canvas": "node dist/canvas-lint.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/addon-svelte-csf": "^5.1.5",
+    "@storybook/svelte-vite": "^10.6.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^22.20.4",
+    "@types/vscode": "1.101",
+    "@vscode/vsce": "^4.0.0",
+    "@xyflow/svelte": "^1.7.0",
+    "concurrently": "^10.0.5",
+    "esbuild": "^0.28.2",
+    "marked": "^18.0.14",
+    "mermaid": "^12.0.0",
+    "shiki": "^4.4.3",
+    "storybook": "^10.6.0",
+    "svelte": "^5.57.1",
+    "svelte-check": "^4.7.6",
+    "typescript": "5.9",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  },
+  "bin": {
+    "canvas-lint": "dist/canvas-lint.js"
+  }
+}

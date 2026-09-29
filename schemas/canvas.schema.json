@@ -1,0 +1,616 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/flying-dice/vs-canvas/main/schemas/canvas.schema.json",
+  "title": "VS Canvas canvas file",
+  "description": "A *.canvas.json file: JSON Canvas 1.0 plus VS Canvas extensions (variants, code line ranges, highlights, line-anchored edges).",
+  "type": "object",
+  "required": ["nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional reference to this schema."
+    },
+    "nodes": {
+      "type": "array",
+      "description": "Nodes in draw order (later nodes are drawn on top). List groups BEFORE the nodes they contain.",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/textNode"
+          },
+          {
+            "$ref": "#/definitions/fileNode"
+          },
+          {
+            "$ref": "#/definitions/linkNode"
+          },
+          {
+            "$ref": "#/definitions/groupNode"
+          }
+        ]
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/edge"
+      }
+    },
+    "vsCanvas": {
+      "type": "object",
+      "description": "VS Canvas metadata; ignored by other JSON Canvas tools.",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": ["map", "investigation", "flow", "notes"],
+          "description": "What the board is for; drives the sidebar icon."
+        },
+        "pinned": {
+          "type": "boolean",
+          "description": "Pinned canvases are listed first and open with Canvas: Open Pinned Map."
+        },
+        "flows": {
+          "type": "array",
+          "description": "Playable flows: a packet travels edges in order.",
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "steps"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "edge": {
+                      "type": "string"
+                    },
+                    "node": {
+                      "type": "string"
+                    },
+                    "lines": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "caption": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "parallel": {
+                      "type": "boolean"
+                    },
+                    "durationMs": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "color": {
+      "type": "string",
+      "pattern": "^[1-6]$|^#[0-9a-fA-F]{6}$",
+      "description": "JSON Canvas preset \"1\"-\"6\" (1 red, 2 orange, 3 yellow, 4 green, 5 cyan, 6 purple) or a hex color like \"#ff8800\". Semantic vocabulary: 1 failure/root cause, 2 investigating, 3 attention/key line, 4 confirmed/healthy, 5 flow/data in motion, 6 domain boundary.",
+      "examples": ["1", "4", "#ff8800"]
+    },
+    "side": {
+      "enum": ["top", "right", "bottom", "left"]
+    },
+    "endStyle": {
+      "enum": ["none", "arrow"]
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique across all nodes, edges and highlights, e.g. \"code-1\", \"edge-3\"."
+    },
+    "textNode": {
+      "type": "object",
+      "required": ["id", "type", "x", "y", "width", "height", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "type": {
+          "const": "text"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "text": {
+          "type": "string",
+          "description": "Markdown (note/sticky/plain) or Mermaid source without fences (mermaid)."
+        },
+        "variant": {
+          "enum": ["note", "sticky", "plain", "mermaid", "finding", "log", "service", "shape"],
+          "default": "note",
+          "description": "note: markdown card (default; ```mermaid fences render). sticky: short colored remark. plain: free text without a card (titles). mermaid: text is Mermaid source. finding: investigation card (findingKind + status). log: monospace log/stack trace (file:line frames clickable, errorLines red). service: map card with entryPoints, tags and optional drill-down canvas. shape: a diagram shape from a library (`shape`, `fields`); `text` is its label."
+        },
+        "title": {
+          "type": "string",
+          "description": "Heading shown on note/mermaid/finding/log/service cards."
+        },
+        "findingKind": {
+          "enum": ["hypothesis", "evidence", "question", "conclusion"],
+          "description": "finding variant: kind of card."
+        },
+        "status": {
+          "enum": ["open", "investigating", "confirmed", "ruled-out"],
+          "description": "finding variant: state of the hypothesis."
+        },
+        "errorLines": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "description": "log variant: 1-based line numbers within text drawn in red."
+        },
+        "entryPoints": {
+          "type": "array",
+          "description": "service variant: entry points shown on zoom.",
+          "items": {
+            "type": "object",
+            "required": ["file", "label"],
+            "additionalProperties": false,
+            "properties": {
+              "file": {
+                "type": "string"
+              },
+              "lines": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "label": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "service variant: short tags."
+        },
+        "canvas": {
+          "type": "string",
+          "description": "service variant: workspace-relative *.canvas.json to drill down into."
+        },
+        "shape": {
+          "enum": [
+            "flowchart.process",
+            "flowchart.decision",
+            "flowchart.terminator",
+            "flowchart.io",
+            "flowchart.document",
+            "flowchart.multi-document",
+            "flowchart.database",
+            "flowchart.subprocess",
+            "flowchart.manual-input",
+            "flowchart.preparation",
+            "flowchart.delay",
+            "flowchart.display",
+            "flowchart.connector",
+            "flowchart.off-page",
+            "uml.class",
+            "uml.interface",
+            "uml.enum",
+            "uml.object",
+            "uml.actor",
+            "uml.use-case",
+            "uml.component",
+            "uml.node",
+            "uml.package",
+            "uml.note",
+            "uml.state",
+            "uml.initial",
+            "uml.final",
+            "uml.choice",
+            "uml.fork",
+            "uml.activity",
+            "c4.person",
+            "c4.person-external",
+            "c4.system",
+            "c4.system-external",
+            "c4.container",
+            "c4.container-db",
+            "c4.container-queue",
+            "c4.container-web",
+            "c4.component",
+            "c4.boundary",
+            "erd.entity",
+            "erd.view",
+            "arch.service",
+            "arch.database",
+            "arch.cache",
+            "arch.queue",
+            "arch.gateway",
+            "arch.load-balancer",
+            "arch.cdn",
+            "arch.client",
+            "arch.mobile",
+            "arch.function",
+            "arch.storage",
+            "arch.user",
+            "arch.external",
+            "arch.region",
+            "bpmn.task",
+            "bpmn.subprocess",
+            "bpmn.start",
+            "bpmn.intermediate",
+            "bpmn.end",
+            "bpmn.gateway-exclusive",
+            "bpmn.gateway-parallel",
+            "bpmn.data-object",
+            "bpmn.pool"
+          ],
+          "description": "variant shape: shape id `<library>.<name>` (libraries flowchart, uml, c4, erd, arch, bpmn; see src/shared/shapes.ts). Unknown ids render as a plain card and are flagged by the linter (unknown-shape)."
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "description": "variant shape: structured data per the shape's field spec: text fields are strings (technology: \"Node.js\"), list fields arrays of lines (attributes, methods, columns, values, actions)."
+        }
+      }
+    },
+    "highlight": {
+      "type": "object",
+      "required": ["id", "start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "First highlighted file line (1-based)."
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Last highlighted file line (inclusive)."
+        },
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "label": {
+          "type": "string"
+        }
+      }
+    },
+    "fileNode": {
+      "type": "object",
+      "required": ["id", "type", "x", "y", "width", "height", "file"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "type": {
+          "const": "file"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "file": {
+          "type": "string",
+          "description": "Workspace-relative path with forward slashes."
+        },
+        "subpath": {
+          "type": "string",
+          "pattern": "^#L\\d+(-L?\\d+)?$",
+          "description": "JSON Canvas subpath, e.g. \"#L10-L20\"; keep in sync with `lines`."
+        },
+        "display": {
+          "enum": ["code", "reference"],
+          "default": "code",
+          "description": "code: live source view of `lines` (or the whole file). reference: compact chip that opens the file."
+        },
+        "lines": {
+          "type": "array",
+          "items": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[firstLine, lastLine], 1-based inclusive: the displayed range of a code node."
+        },
+        "highlights": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/highlight"
+          }
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
+    "linkNode": {
+      "type": "object",
+      "required": ["id", "type", "x", "y", "width", "height", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "type": {
+          "const": "link"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https?://\\S+$"
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
+    "groupNode": {
+      "type": "object",
+      "required": ["id", "type", "x", "y", "width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "type": {
+          "const": "group"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "label": {
+          "type": "string",
+          "description": "Shown in a tab at the top-left; keep the top 36px of the group free of nodes."
+        },
+        "background": {
+          "type": "string"
+        },
+        "backgroundStyle": {
+          "enum": ["cover", "ratio", "repeat"]
+        },
+        "sublabel": {
+          "type": "string",
+          "description": "Frame shapes: secondary label line, e.g. the C4 boundary type \"Software System\"."
+        },
+        "shape": {
+          "enum": ["uml.package", "c4.boundary", "arch.region", "bpmn.pool"],
+          "description": "Optional frame shape drawn instead of the plain group: c4.boundary, uml.package, arch.region, bpmn.pool."
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "fromNode", "toNode"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "fromNode": {
+          "type": "string",
+          "description": "Source node id."
+        },
+        "fromSide": {
+          "$ref": "#/definitions/side"
+        },
+        "fromEnd": {
+          "$ref": "#/definitions/endStyle"
+        },
+        "toNode": {
+          "type": "string",
+          "description": "Target node id."
+        },
+        "toSide": {
+          "$ref": "#/definitions/side"
+        },
+        "toEnd": {
+          "$ref": "#/definitions/endStyle"
+        },
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "label": {
+          "type": "string"
+        },
+        "fromLine": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Anchor to this file line of a code node (must be inside its displayed `lines`). Leaves from the node's right edge."
+        },
+        "toLine": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Anchor to this file line of a code node. Arrives at the node's left edge."
+        },
+        "animated": {
+          "type": "boolean"
+        },
+        "sublabel": {
+          "type": "string",
+          "description": "Secondary label under the label, e.g. the technology/protocol \"JSON/HTTPS\"."
+        },
+        "fromMarker": {
+          "$ref": "#/definitions/marker"
+        },
+        "toMarker": {
+          "$ref": "#/definitions/marker"
+        },
+        "lineStyle": {
+          "enum": ["solid", "dashed", "dotted"],
+          "default": "solid"
+        },
+        "routing": {
+          "enum": ["bezier", "orthogonal", "straight"],
+          "default": "bezier",
+          "description": "Edge path: bezier curve (default), orthogonal right angles with rounded corners, or straight."
+        },
+        "relation": {
+          "enum": [
+            "flow.next",
+            "uml.association",
+            "uml.inheritance",
+            "uml.realization",
+            "uml.dependency",
+            "uml.aggregation",
+            "uml.composition",
+            "uml.transition",
+            "c4.uses",
+            "erd.one-to-one",
+            "erd.one-to-many",
+            "erd.zero-to-many",
+            "erd.many-to-many",
+            "arch.calls",
+            "arch.publishes",
+            "arch.reads",
+            "bpmn.sequence",
+            "bpmn.message"
+          ],
+          "description": "Relationship preset that implies markers, lineStyle and routing (explicit fields win): flow.next, uml.*, c4.uses, erd.*, arch.*, bpmn.*."
+        }
+      }
+    },
+    "marker": {
+      "enum": [
+        "none",
+        "arrow",
+        "open-arrow",
+        "triangle",
+        "diamond",
+        "diamond-filled",
+        "circle",
+        "crow-one",
+        "crow-zero-one",
+        "crow-many",
+        "crow-one-many",
+        "crow-zero-many"
+      ],
+      "description": "Rich end marker. none/arrow are JSON Canvas ends; open-arrow, triangle (hollow, inheritance), diamond / diamond-filled (aggregation / composition), circle and the crow-* ERD cardinalities are extensions. Writers also set fromEnd/toEnd to the closest none/arrow."
+    }
+  }
+}
