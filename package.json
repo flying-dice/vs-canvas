@@ -2,7 +2,7 @@
   "name": "vs-canvas",
   "displayName": "VS Canvas",
   "description": "Put your codebase on an infinite canvas: repo maps, bug investigations, data flows and diagrams, built by you or your AI agent.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "flying-dice",
   "license": "MIT",
   "repository": {
@@ -112,7 +112,7 @@
             "null"
           ],
           "default": null,
-          "markdownDescription": "Port for this window's MCP server (streamable HTTP on 127.0.0.1). Leave empty to use a stable port derived from the workspace folder name (3777\u20133976), so each project keeps its own port. If the port is taken, the next free one is used."
+          "markdownDescription": "Port for this window's MCP server (streamable HTTP on 127.0.0.1). Leave empty to use a stable port derived from the workspace folder name (3777–3976), so each project keeps its own port. If the port is taken, the next free one is used."
         },
         "vsCanvas.claudeCode.mcpJson": {
           "type": "string",
