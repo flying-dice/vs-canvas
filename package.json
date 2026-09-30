@@ -2,7 +2,7 @@
   "name": "vs-canvas",
   "displayName": "VS Canvas",
   "description": "Put your codebase on an infinite canvas: repo maps, bug investigations, data flows and diagrams, built by you or your AI agent.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "flying-dice",
   "license": "MIT",
   "repository": {
