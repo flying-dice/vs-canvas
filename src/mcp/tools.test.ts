@@ -89,6 +89,16 @@ describe('canvas_connect', () => {
   });
 });
 
+describe('canvas_add_diff', () => {
+  it('adds a diff node with diffFrom, and lint rejects line anchors to it', async () => {
+    const r = await call('canvas_add_diff', { left: 'fx/order.0.json', right: 'fx/order.1.json', title: 'placeOrder' });
+    expect(r.out.nodeId).toBe('diff-1');
+    expect(state.nodes[0]).toMatchObject({ type: 'file', display: 'diff', file: 'fx/order.1.json', diffFrom: 'fx/order.0.json', width: 560, height: 420 });
+    await call('canvas_add_note', { markdown: 'n' });
+    expect((await call('canvas_highlight_lines', { nodeId: 'diff-1', ranges: [{ start: 1, end: 2 }] })).error).toContain('not a code view');
+  });
+});
+
 describe('canvas_add_diagram', () => {
   const c4 = {
     library: 'c4', title: 'Shop', frame: true, frameSublabel: 'Software System',

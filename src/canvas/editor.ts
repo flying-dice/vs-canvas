@@ -217,12 +217,24 @@ export class CanvasEditorProvider implements vscode.CustomTextEditorProvider, vs
     }
     const code: Record<string, ResolvedCode> = {};
     const entryCode: Record<string, ResolvedCode> = {};
+    const diffBase: Record<string, ResolvedCode> = {};
     const portals: Record<string, PortalPreview> = {};
     const files = new Set<string>();
     await Promise.all(
       canvas.nodes.map(async (n) => {
         if (n.type === 'file' && isCanvasPath(n.file)) {
           portals[n.id] = await this.portalPreview(n.file, files);
+        } else if (n.type === 'file' && n.display === 'diff') {
+          const [r, b] = await Promise.all([
+            resolveCode({ ...n, lines: undefined, highlights: undefined }),
+            n.diffFrom
+              ? resolveCode({ ...n, file: n.diffFrom, lines: undefined, highlights: undefined })
+              : Promise.resolve<ResolvedCode>({ absPath: '', language: 'text', firstLine: 1, lines: [], totalLines: 0, error: 'Diff node has no diffFrom (left-hand file).' }),
+          ]);
+          code[n.id] = r;
+          diffBase[n.id] = b;
+          files.add(r.absPath);
+          if (b.absPath) files.add(b.absPath);
         } else if (n.type === 'file' && n.display !== 'reference') {
           const r = await resolveCode(n);
           code[n.id] = r;
@@ -245,6 +257,7 @@ export class CanvasEditorProvider implements vscode.CustomTextEditorProvider, vs
     s.pending = false;
     this.send(s, {
       type: 'document', canvas, code, canvasPath: this.docs.relPath(s.doc.uri),
+      ...(Object.keys(diffBase).length && { diffBase }),
       ...(Object.keys(entryCode).length && { entryCode }),
       ...(Object.keys(portals).length && { portals }),
       ...(s.trail.length && { breadcrumbs: s.trail }),

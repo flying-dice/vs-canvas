@@ -46,8 +46,10 @@ export type ToWebview =
   | {
       type: 'document';
       canvas: CanvasFile;
-      /** Keyed by node id, for file nodes with display 'code'. */
+      /** Keyed by node id, for file nodes with display 'code', and the right-hand (after) file of 'diff' nodes. */
       code: Record<string, ResolvedCode>;
+      /** Left-hand (before) file of display 'diff' nodes (`diffFrom`), keyed by node id. Whole file, same cap as code. */
+      diffBase?: Record<string, ResolvedCode>;
       /** Workspace-relative path of this canvas file. */
       canvasPath: string;
       /**

@@ -100,6 +100,10 @@ export type LineHighlight = {
  * A workspace file.
  * - display 'code' (default for text files): shows source lines `lines` (or the whole file), with highlights.
  * - display 'reference': a compact chip showing the path (and line range) that opens the file on click.
+ * - display 'diff': a diff card comparing two workspace files, `diffFrom` (left / before) against `file`
+ *   (right / after). Whole files are compared line by line; `lines` and `highlights` are ignored. Other JSON Canvas
+ *   tools see a plain file node for the right-hand file. Chain diff nodes (a.json -> b.json, b.json -> c.json) to
+ *   show data changing along a flow or timeline.
  * A file node whose `file` ends in `.canvas.json` renders as a portal: a live thumbnail of that canvas that
  * opens it (drill-down from maps). `display` is ignored for portals.
  */
@@ -108,7 +112,9 @@ export type FileNode = NodeBase & {
   file: string;
   /** JSON Canvas subpath, e.g. "#L10-L20". Kept in sync with `lines` for interop. */
   subpath?: string;
-  display?: 'code' | 'reference';
+  display?: 'code' | 'reference' | 'diff';
+  /** display 'diff' only: workspace-relative path of the left-hand (before) file; `file` is the right-hand (after). */
+  diffFrom?: string;
   lines?: [start: number, end: number];
   highlights?: LineHighlight[];
   title?: string;

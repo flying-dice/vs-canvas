@@ -18,9 +18,9 @@ export type Placement = { x?: number; y?: number; near?: string; side?: PlaceSid
 export type { Rect };
 export type IdKind =
   | 'code' | 'ref' | 'note' | 'sticky' | 'text' | 'mermaid' | 'link' | 'group' | 'edge' | 'hl'
-  | 'finding' | 'log' | 'service' | 'portal' | 'shape';
+  | 'finding' | 'log' | 'service' | 'portal' | 'shape' | 'diff';
 export type SizeKind =
-  | 'code' | 'reference' | 'note' | 'sticky' | 'text' | 'mermaid' | 'link' | 'group' | 'finding' | 'log' | 'service' | 'portal' | 'shape';
+  | 'code' | 'reference' | 'note' | 'sticky' | 'text' | 'mermaid' | 'link' | 'group' | 'finding' | 'log' | 'service' | 'portal' | 'shape' | 'diff';
 
 type Distribute<T> = T extends unknown ? Omit<T, 'id' | 'x' | 'y' | 'width' | 'height'> : never;
 /** A new node before an id and geometry are assigned. Explicit x/y/width/height are honoured. */
@@ -50,6 +50,7 @@ export function defaultSize(kind: SizeKind, opts: { lineCount?: number; longestL
     case 'service': return { w: 320, h: 200 };
     case 'portal': return { w: 360, h: 240 };
     case 'shape': return { w: 176, h: 72 };
+    case 'diff': return { w: 560, h: 420 };
   }
 }
 
@@ -64,7 +65,7 @@ type KindProbe = Pick<CanvasFileNode, 'type'> & Partial<{ display: string; varia
 
 export function sizeKindOf(n: KindProbe): SizeKind {
   switch (n.type) {
-    case 'file': return isCanvasPath(n.file) ? 'portal' : n.display === 'reference' ? 'reference' : 'code';
+    case 'file': return isCanvasPath(n.file) ? 'portal' : n.display === 'reference' ? 'reference' : n.display === 'diff' ? 'diff' : 'code';
     case 'text':
       return n.variant === 'sticky' ? 'sticky' : n.variant === 'plain' ? 'text' : n.variant === 'mermaid' ? 'mermaid'
         : n.variant === 'finding' ? 'finding' : n.variant === 'log' ? 'log' : n.variant === 'service' ? 'service'
@@ -84,7 +85,7 @@ export function nodeDefaultSize(
 
 export function idKindOf(n: KindProbe): IdKind {
   switch (n.type) {
-    case 'file': return isCanvasPath(n.file) ? 'portal' : n.display === 'reference' ? 'ref' : 'code';
+    case 'file': return isCanvasPath(n.file) ? 'portal' : n.display === 'reference' ? 'ref' : n.display === 'diff' ? 'diff' : 'code';
     case 'text':
       return n.variant === 'sticky' ? 'sticky' : n.variant === 'plain' ? 'text' : n.variant === 'mermaid' ? 'mermaid'
         : n.variant === 'finding' ? 'finding' : n.variant === 'log' ? 'log' : n.variant === 'service' ? 'service'
@@ -109,7 +110,8 @@ export function parseSubpath(s: string | undefined): [number, number] | undefine
 /** Keep `subpath` in sync with `lines` on a file node (mutates). */
 export function syncSubpath<T extends CanvasFileNode>(n: T): T {
   if (n.type !== 'file') return n;
-  if (n.lines) n.subpath = subpathFor(n.lines);
+  if (n.display === 'diff') delete n.subpath;
+  else if (n.lines) n.subpath = subpathFor(n.lines);
   else delete n.subpath;
   return n;
 }
@@ -429,7 +431,7 @@ export function addHighlights(file: CanvasFile, node: FileNode, ranges: Omit<Lin
 
 // ---------- anchors ----------
 
-export const isCodeNode = (n: CanvasFileNode): n is FileNode => n.type === 'file' && n.display !== 'reference';
+export const isCodeNode = (n: CanvasFileNode): n is FileNode => n.type === 'file' && n.display !== 'reference' && n.display !== 'diff';
 
 /** Displayed line range of a code node; whole file when `lines` is unset (needs totalLines). */
 export function displayedRange(n: FileNode, totalLines?: number): [number, number] | undefined {

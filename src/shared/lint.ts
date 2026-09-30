@@ -34,7 +34,8 @@ export type LintRuleId =
   | 'self-loop'
   | 'duplicate-edge'
   | 'empty-group'
-  | 'missing-file'; // file node's path does not exist (needs LintOptions.fileInfo)
+  | 'missing-file' // file node's path (or a diff node's diffFrom) does not exist (needs LintOptions.fileInfo)
+  | 'diff-missing-base'; // diff node without a diffFrom (left-hand file)
 
 export type LintMove = { id: string; x: number; y: number; width?: number; height?: number };
 
@@ -75,6 +76,7 @@ export const LINT_RULES: readonly LintRuleId[] = [
   'node-overlap', 'node-crowded', 'group-straddle', 'group-label-covered', 'edge-through-node', 'edge-label-overlap',
   'edge-crossing', 'edge-backwards', 'text-overflow', 'far-outlier', 'group-order', 'duplicate-id', 'dangling-edge',
   'invalid-anchor', 'highlight-out-of-range', 'self-loop', 'duplicate-edge', 'empty-group', 'missing-file', 'unknown-shape',
+  'diff-missing-base',
 ];
 
 export const DEFAULT_SEVERITY: Record<LintRuleId, LintSeverity> = {
@@ -98,6 +100,7 @@ export const DEFAULT_SEVERITY: Record<LintRuleId, LintSeverity> = {
   'empty-group': 'warning',
   'missing-file': 'error',
   'unknown-shape': 'error',
+  'diff-missing-base': 'error',
 };
 
 export const LINT_DEFAULTS = { minGap: 24, maxCrossings: 4, outlierDistance: 2000, outlierGap: 80 } as const;
@@ -510,7 +513,7 @@ function structural(c: Ctx): LintDiagnostic[] {
     for (const [end, node, line] of [['fromLine', a, e.fromLine], ['toLine', b, e.toLine]] as const) {
       if (line === undefined) continue;
       if (!isCode(node)) {
-        push(mk(c, 'invalid-anchor', `Edge ${e.id} ${end}=${line} but ${node.id} is not a code file node, so it has no lines.`, [node.id], [e.id]));
+        push(mk(c, 'invalid-anchor', `Edge ${e.id} ${end}=${line} but ${node.id} is not a code file node (diff and reference nodes have no lines), so it has no lines.`, [node.id], [e.id]));
         continue;
       }
       const r = displayRange(c, node);
@@ -536,6 +539,14 @@ function structural(c: Ctx): LintDiagnostic[] {
       }
       const info = fileInfo?.(n.file);
       if (info && !info.exists) push(mk(c, 'missing-file', `${n.id} references ${n.file}, which does not exist.`, [n.id]));
+      if (n.display === 'diff') {
+        if (!n.diffFrom) {
+          push(mk(c, 'diff-missing-base', `Diff node ${n.id} has no diffFrom (the left-hand / before file).`, [n.id]));
+        } else {
+          const base = fileInfo?.(n.diffFrom);
+          if (base && !base.exists) push(mk(c, 'missing-file', `${n.id} diffFrom references ${n.diffFrom}, which does not exist.`, [n.id]));
+        }
+      }
     }
     if (n.type === 'text' && (n.variant === 'shape' || n.shape !== undefined) && !shapeById(n.shape)) {
       push(mk(c, 'unknown-shape', `${n.id} has unknown shape ${n.shape === undefined ? '(none)' : `"${n.shape}"`}; it renders as a plain card. ${shapeHint(n.shape)}`, [n.id]));

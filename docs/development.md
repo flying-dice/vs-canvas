@@ -38,6 +38,7 @@ The server also provides prompts that encode good workflows: `map_repo`, `invest
 | `canvas_add_log`, `canvas_add_finding` | Stack traces and hypothesis/evidence cards for investigations |
 | `canvas_add_flow`, `canvas_play_flow` | Data-flow playback |
 | `canvas_add_note`, `canvas_add_sticky`, `canvas_add_text`, `canvas_add_mermaid`, `canvas_add_file_reference`, `canvas_add_link` | Explanations |
+| `canvas_add_diff` | Diff card of two files; chain them to show data changing over a timeline |
 | `canvas_update_node`, `canvas_remove`, `canvas_clear`, `canvas_layout`, `canvas_lint` | Edit, auto-layout, lint and fix |
 | `canvas_get_state`, `canvas_focus` | Inspect, and move the viewer's camera |
 | `code_symbols`, `code_call_hierarchy`, `code_definition` | Raw language-server data |

@@ -243,6 +243,20 @@ describe('structural rules', () => {
     expect(has(c, 'missing-file', { fileInfo: () => ({ exists: true, totalLines: 100 }) })).toBe(false);
     expect(has(c, 'missing-file', { fileInfo: () => undefined })).toBe(false);
   });
+  const diff = (extra: object = {}) =>
+    code('d', 0, 0, { display: 'diff', file: 'b.json', diffFrom: 'a.json', lines: undefined, ...extra });
+  it('diff nodes: missing-file checks diffFrom, diff-missing-base flags absent base', () => {
+    const c = cf([diff()]);
+    const fileInfo = (p: string) => ({ exists: p !== 'a.json', totalLines: 10 });
+    expect(get(c, 'missing-file', { fileInfo })?.message).toContain('a.json');
+    expect(has(c, 'diff-missing-base')).toBe(false);
+    expect(get(cf([diff({ diffFrom: undefined })]), 'diff-missing-base')?.severity).toBe('error');
+  });
+  it('diff nodes have no lines: anchors and highlights are not code-checked', () => {
+    const c = cf([diff({ highlights: [{ id: 'h', start: 500, end: 600 }] }), code('c', 600, 0)], [edge('e', 'c', 'd', { toLine: 5 })]);
+    expect(has(c, 'highlight-out-of-range')).toBe(false);
+    expect(get(c, 'invalid-anchor')?.nodeIds).toEqual(['d']);
+  });
 });
 
 describe('fixCanvas', () => {

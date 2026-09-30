@@ -167,7 +167,8 @@
               "duplicate-edge",
               "empty-group",
               "missing-file",
-              "unknown-shape"
+              "unknown-shape",
+              "diff-missing-base"
             ]
           }
         },

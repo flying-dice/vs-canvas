@@ -5,6 +5,8 @@ export type FlowData = {
   node: CanvasFileNode;
   /** Resolved source for file nodes displayed as code. */
   code?: ResolvedCode;
+  /** Diff nodes: the resolved left (before) file; `code` is the right (after) file. */
+  diffBase?: ResolvedCode;
   /** Anchored line numbers (from edges' fromLine/toLine) that need line handles. */
   anchors?: { in: number[]; out: number[] };
   /** Service nodes: resolved entry-point snippets by entry index (from ToWebview.entryCode `${nodeId}#${index}`). */
@@ -13,12 +15,13 @@ export type FlowData = {
   portal?: PortalPreview;
 } & Record<string, unknown>;
 
-export type FlowKind = 'code' | 'fileRef' | 'note' | 'sticky' | 'text' | 'mermaid' | 'link' | 'group' | 'finding' | 'log' | 'service' | 'portal' | 'shape';
+export type FlowKind = 'code' | 'fileRef' | 'note' | 'sticky' | 'text' | 'mermaid' | 'link' | 'group' | 'finding' | 'log' | 'service' | 'portal' | 'shape' | 'diff';
 
 export function kindOf(n: CanvasFileNode): FlowKind {
   switch (n.type) {
     case 'file':
       if (n.file.endsWith('.canvas.json')) return 'portal';
+      if (n.display === 'diff') return 'diff';
       return n.display === 'reference' ? 'fileRef' : 'code';
     case 'link':
       return 'link';
@@ -39,4 +42,4 @@ export function kindOf(n: CanvasFileNode): FlowKind {
 }
 
 /** Kinds whose size comes from the document; the others size themselves and report it back. */
-export const RESIZABLE: ReadonlySet<FlowKind> = new Set(['note', 'sticky', 'mermaid', 'group', 'text', 'link', 'finding', 'log', 'service', 'portal', 'shape']);
+export const RESIZABLE: ReadonlySet<FlowKind> = new Set(['note', 'sticky', 'mermaid', 'group', 'text', 'link', 'finding', 'log', 'service', 'portal', 'shape', 'diff']);

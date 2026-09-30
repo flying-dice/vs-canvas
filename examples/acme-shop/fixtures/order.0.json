@@ -1,0 +1,13 @@
+{
+  "cartId": "cart_812",
+  "userId": "u_204",
+  "region": "WA",
+  "items": [
+    { "sku": "MUG-BLK-12", "quantity": 2, "unitPrice": 12.5 },
+    { "sku": "TEE-GRY-M", "quantity": 1, "unitPrice": 24.0 }
+  ],
+  "discountCode": null,
+  "total": 49.0,
+  "currency": "USD",
+  "status": "pending"
+}

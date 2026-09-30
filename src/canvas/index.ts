@@ -70,7 +70,7 @@ export class CanvasIndex implements vscode.Disposable {
           const c = await this.docs.read(uri);
           const refs: CodeRef[] = [];
           for (const n of c.nodes) {
-            if (n.type === 'file' && !isCanvasPath(n.file) && n.display !== 'reference') {
+            if (n.type === 'file' && !isCanvasPath(n.file) && n.display !== 'reference' && n.display !== 'diff') {
               refs.push({ file: n.file, start: n.lines?.[0] ?? 1, end: n.lines?.[1] ?? Number.MAX_SAFE_INTEGER, nodeId: n.id });
               for (const h of n.highlights ?? []) refs.push({ file: n.file, start: h.start, end: h.end, nodeId: n.id });
             } else if (n.type === 'text' && n.variant === 'service') {

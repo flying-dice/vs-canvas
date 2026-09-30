@@ -162,6 +162,9 @@ const nodes: CanvasFileNode[] = [
   { id: 'fl-charge', type: 'file', file: 'src/payments/charge.ts', display: 'code', lines: [28, 34], x: 1280, y: 1136, width: 520, height: 168 },
   { id: 'fl-retry', type: 'file', file: 'src/payments/retry.ts', display: 'code', lines: [44, 51], x: 1920, y: 1136, width: 520, height: 184 },
   { id: 'fl-ledger', type: 'file', file: 'src/ledger/write.ts', display: 'code', lines: [8, 11], x: 2560, y: 1136, width: 520, height: 112 },
+  // Data layer beneath the logic: the order document as each step changed it.
+  { id: 'fd-1', type: 'file', file: 'data/order.1.json', diffFrom: 'data/order.0.json', display: 'diff', x: 640, y: 1408, width: 520, height: 264 },
+  { id: 'fd-2', type: 'file', file: 'data/order.2.json', diffFrom: 'data/order.1.json', display: 'diff', x: 1280, y: 1408, width: 520, height: 264 },
 ];
 
 const canvas: CanvasFile = {
@@ -181,6 +184,8 @@ const canvas: CanvasFile = {
     { id: 'fe3', fromNode: 'fl-charge', fromLine: 31, toNode: 'fl-retry', toSide: 'left', color: '5' },
     { id: 'fe4', fromNode: 'fl-retry', fromLine: 48, toNode: 'fl-ledger', toLine: 8, color: '5' },
     { id: 'fe5', fromNode: 'fl-retry', fromLine: 46, toNode: 'fl-ledger', toLine: 9, color: '5' },
+    { id: 'fd-e1', fromNode: 'fl-orders', fromSide: 'bottom', toNode: 'fd-1', toSide: 'top', label: 'creates' },
+    { id: 'fd-e2', fromNode: 'fl-charge', fromSide: 'bottom', toNode: 'fd-2', toSide: 'top', label: 'charges' },
   ],
   vsCanvas: {
     version: 1,
@@ -213,7 +218,21 @@ const canvas: CanvasFile = {
   },
 };
 
+const json = (file: string, lines: string[]): ResolvedCode => ({
+  absPath: `/demo/acme-shop/${file}`, language: 'json', firstLine: 1, lines, totalLines: lines.length,
+});
+const order0 = ['{', '  "id": 812,', '  "status": "new",', '  "items": [', '    { "sku": "A-1", "qty": 2 },', '    { "sku": "B-7", "qty": 1 }', '  ],', '  "total": 4900', '}'];
+const order1 = ['{', '  "id": 812,', '  "status": "pending",', '  "items": [', '    { "sku": "A-1", "qty": 2 },', '    { "sku": "B-7", "qty": 1 }', '  ],', '  "total": 4900,', '  "currency": "EUR"', '}'];
+const order2 = ['{', '  "id": 812,', '  "status": "paid",', '  "items": [', '    { "sku": "A-1", "qty": 2 },', '    { "sku": "B-7", "qty": 1 }', '  ],', '  "total": 4900,', '  "currency": "EUR",', '  "charges": ["ch_91x", "ch_91y"]', '}'];
+
+const diffBase: Record<string, ResolvedCode> = {
+  'fd-1': json('data/order.0.json', order0),
+  'fd-2': json('data/order.1.json', order1),
+};
+
 const code: Record<string, ResolvedCode> = {
+  'fd-1': json('data/order.1.json', order1),
+  'fd-2': json('data/order.2.json', order2),
   'inv-retry': src.retry,
   'inv-charge': src.charge,
   'fl-checkout': src.checkout,
@@ -259,6 +278,7 @@ export function showcaseDocument(): Extract<ToWebview, { type: 'document' }> {
     type: 'document',
     canvas,
     code,
+    diffBase,
     entryCode,
     portals,
     canvasPath: 'canvases/acme-shop.canvas.json',

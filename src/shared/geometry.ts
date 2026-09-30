@@ -51,7 +51,7 @@ export function groupLabelRect(g: Pick<GroupNode, 'x' | 'y' | 'width' | 'label'>
   return { x: g.x, y: g.y, w: Math.min(g.width, Math.max(60, g.label.length * 8 + 24)), h: GEOMETRY.groupLabelHeight };
 }
 
-export const isCode = (n: CanvasFileNode): n is FileNode => n.type === 'file' && n.display !== 'reference';
+export const isCode = (n: CanvasFileNode): n is FileNode => n.type === 'file' && n.display !== 'reference' && n.display !== 'diff';
 
 // ---------- handles ----------
 

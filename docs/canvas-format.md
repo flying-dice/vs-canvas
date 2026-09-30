@@ -24,7 +24,7 @@ Canvases are JSON Canvas 1.0 files plus a few extensions. Schema: `schemas/canva
 | `text` + `variant` `finding` | `title`, `text`, `findingKind` (`hypothesis`\|`evidence`\|`question`\|`conclusion`), `status` (`open`\|`investigating`\|`confirmed`\|`ruled-out`); colour by status: investigating `"2"`, confirmed `"4"`, others none | 280x150 |
 | `text` + `variant` `log` | `text` = log / stack trace (`file:line` frames are clickable), `errorLines` (1-based lines within `text`, drawn red), `title` | 520 x (40 + 18/line, max 420) |
 | `text` + `variant` `service` | `title` (name), `text` (description), `entryPoints: [{file, lines?: [a,b], label}]`, `tags`, `canvas` (drill-down `*.canvas.json`); shows entry points, then code, as you zoom | 320x200 |
-| `file` | `file` (workspace-relative, `/` separators), `display`: `code` (default; live source) or `reference` (chip 320x56), `lines: [first, last]` (1-based, inclusive; omit = whole file), `highlights: [{id, start, end, color?, label?}]`, `title`; keep `subpath` = `"#L<first>-L<last>"` in sync with `lines` | code: width 420-1000, height = 18 * lineCount + 36 |
+| `file` | `file` (workspace-relative, `/` separators), `display`: `code` (default; live source), `reference` (chip 320x56) or `diff` (line diff of `diffFrom` (left, before) against `file` (right, after); whole files, `lines`/`highlights` ignored, no line anchors), `lines: [first, last]` (1-based, inclusive; omit = whole file), `highlights: [{id, start, end, color?, label?}]`, `title`; keep `subpath` = `"#L<first>-L<last>"` in sync with `lines` | code: width 420-1000, height = 18 * lineCount + 36; diff: 560x420 (scrolls inside) |
 | `file` with `file: "x.canvas.json"` | portal: live thumbnail of another canvas, opens it on click | 360x240 |
 | `link` | `url` (http/https), `title` | 320x72 |
 | `text` + `variant` `shape` | diagram shape: `shape` (id `<library>.<name>`, see [Shapes](#shapes)), `text` (label), `fields` | per shape (`size` in `src/shared/shapes.ts`) |
@@ -55,6 +55,7 @@ Diagram shapes come in six libraries; the full registry (ids, sizes, fields, rel
 
 - **Shape node**: `{ "type": "text", "variant": "shape", "shape": "c4.container", "text": "API\nHandles orders", "fields": { "technology": "Node.js" }, ... }`. `id` prefix `shape-`. `text` is the label (for c4/arch top-layout shapes the first line is the name, further lines the description). `fields` keys per shape: text fields are strings (`technology`, `stereotype`), list fields arrays of lines (`attributes`, `methods`, `values`, `actions`, ERD `columns` like `"id uuid PK"`, `"user_id uuid FK"`). Omit `width`/`height` to get the shape's default size; grow `height` for long text or many field lines (`text-overflow` estimates: header 32px + 20px per field line for UML/ERD compartments; label wraps in ~70% of the width for decision/terminator/io).
 - **Frames**: a `group` with `shape` (`c4.boundary`, `uml.package`, `arch.region`, `bpmn.pool`) plus `label` and `sublabel` (e.g. `"Software System"`). Same rules as groups (list first, ~40px padding, top 36px free).
+- **Data layer / timeline.** Put a row of diff nodes (`order.0.json` -> `order.1.json` -> `order.2.json`, each a `display: "diff"` file node with `diffFrom`) beneath the code nodes that produce each change, connect code -> diff ("writes") and diff -> diff ("then"), and let a flow visit them with `node` steps. MCP: `canvas_add_diff`. See `examples/acme-shop/canvases/order-data.canvas.json`.
 - **Unknown shape ids** are kept and drawn as a plain card, but flagged by the `unknown-shape` lint error.
 - **Edge markers**: `fromMarker` / `toMarker` are one of `none arrow open-arrow triangle diamond diamond-filled circle crow-one crow-zero-one crow-many crow-one-many crow-zero-many`. They win over `fromEnd`/`toEnd`, which writers keep at the closest `none`/`arrow` so other JSON Canvas tools still draw something.
 - **`lineStyle`**: `solid` (default) `dashed` `dotted`. **`routing`**: `bezier` (default), `orthogonal` (right angles, 8px rounded corners; label at the path centre), `straight`.
@@ -74,7 +75,7 @@ Diagram shapes come in six libraries; the full registry (ids, sizes, fields, rel
 - **Text must fit**: ~7.5px per character wrapping at `width - 24`, 20px per line, 24px padding (`text-overflow`); grow `height`. Shapes use a per-layout estimate (see Shapes).
 - **Edges should not cross other nodes** (`edge-through-node`; orthogonal edges are checked along their right-angle path), labels should not cover nodes (`edge-label-overlap`), and crossings should be few (`edge-crossing`, more than 4 reported).
 - **No far-flung nodes** (`far-outlier`, > 2000px from anything).
-- Structural: `unknown-shape`, unique ids, no dangling / self-loop / duplicate edges, valid anchors and highlight ranges, existing files.
+- Structural: `unknown-shape`, unique ids, no dangling / self-loop / duplicate edges, valid anchors and highlight ranges, existing files (including a diff node's `diffFrom`; `diff-missing-base` flags a diff node without one).
 
 ## Tools
 

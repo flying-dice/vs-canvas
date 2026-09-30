@@ -40,6 +40,7 @@
   import GroupNode from './nodes/GroupNode.svelte';
   import FindingNode from './nodes/FindingNode.svelte';
   import LogNode from './nodes/LogNode.svelte';
+  import DiffNode from './nodes/DiffNode.svelte';
   import ServiceNode from './nodes/ServiceNode.svelte';
   import PortalNode from './nodes/PortalNode.svelte';
   import ShapeNode from './nodes/ShapeNode.svelte';
@@ -88,6 +89,7 @@
     service: ServiceNode,
     portal: PortalNode,
     shape: ShapeNode,
+    diff: DiffNode,
   } as unknown as NodeTypes;
   const edgeTypes = { canvas: CanvasEdge } as unknown as EdgeTypes;
 
@@ -258,6 +260,7 @@
       const data: FlowData = {
         node: n,
         code: code[n.id],
+        ...(kind === 'diff' ? { diffBase: msg.diffBase?.[n.id] } : {}),
         anchors: { in: [...(a?.in ?? [])], out: [...(a?.out ?? [])] },
       };
       if (kind === 'service' && msg.entryCode) {
@@ -954,6 +957,8 @@
       const flow = nodes.find((q) => q.id === id);
       const code = (flow?.data as FlowData | undefined)?.code;
       const first = (n as FileNode).highlights?.[0]?.start ?? code?.firstLine ?? (n as FileNode).lines?.[0] ?? 1;
+      const isDiff = (n as FileNode).display === 'diff'; // whole-file compare: no line-based trace / expand
+      if (isDiff && (action === 'callers' || action === 'callees' || action === 'more')) return;
       switch (action) {
         case 'open': return post({ type: 'openFile', path: n.file, line: first });
         case 'callers': return post({ type: 'trace', nodeId: id, line: first, direction: 'incoming' });
@@ -1025,7 +1030,7 @@
 
   const KIND_ICON: Record<FlowKind, IconName> = {
     code: 'code', fileRef: 'file', note: 'note', sticky: 'sticky', text: 'text', mermaid: 'mermaid', link: 'link',
-    group: 'group', finding: 'hypothesis', log: 'log', service: 'service', portal: 'portal', shape: 'shapes',
+    group: 'group', finding: 'hypothesis', log: 'log', service: 'service', portal: 'portal', shape: 'shapes', diff: 'diff',
   };
   function nodeTitle(n: Node): string {
     const d = (n.data as FlowData).node;

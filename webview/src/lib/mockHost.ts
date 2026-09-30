@@ -68,7 +68,7 @@ export function createMockHost(initial: Doc, send: (m: ToWebview) => void): Mock
   function echo() {
     clearTimeout(echoTimer);
     echoTimer = setTimeout(() => {
-      for (const n of canvas.nodes) if (n.type === 'file' && n.display !== 'reference' && !n.file.endsWith('.canvas.json') && !code[n.id]?.error) code[n.id] = resolve(n);
+      for (const n of canvas.nodes) if (n.type === 'file' && n.display !== 'reference' && n.display !== 'diff' && !n.file.endsWith('.canvas.json') && !code[n.id]?.error) code[n.id] = resolve(n);
       send({ ...initial, canvas: structuredClone(canvas), code: structuredClone(code) });
       for (const s of pendingSelect.splice(0)) send({ type: 'select', nodeIds: s.nodeIds, ...(s.edit && { edit: true }) });
     }, 30);

@@ -45,6 +45,11 @@ Start with `canvas_create` (pick `kind`: `map`, `investigation`, `flow` or `note
 3. Connect services that call each other; `canvas_add_portal` to link deeper canvases.
 4. Optionally a C4 container view with `canvas_add_diagram`.
 
+**Show data changing**
+`canvas_add_diff` with `left` (before) and `right` (after) files, e.g. `order.0.json` and `order.1.json`, placed
+under the code that made the change (`attachTo` the code node). Chain the next diff (`order.1.json` →
+`order.2.json`) beside it, then `canvas_add_flow` with steps whose `node` is each diff to play the timeline.
+
 **Draw a diagram**
 Use `canvas_add_diagram` to build a whole diagram in one call: `library` (`c4`, `flowchart`, `uml`, `erd`,
 `arch`, `bpmn`), `nodes` with shape ids and fields, `edges` with `relation` presets; it lays itself out. Call

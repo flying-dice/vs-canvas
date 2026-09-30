@@ -195,7 +195,7 @@ const MUTATING = new Set([
   'canvas_open_file', 'canvas_add_file_reference', 'canvas_add_note', 'canvas_add_sticky', 'canvas_add_text',
   'canvas_add_mermaid', 'canvas_add_link', 'canvas_add_group', 'canvas_update_node', 'canvas_highlight_lines', 'canvas_connect',
   'canvas_add_finding', 'canvas_add_log', 'canvas_add_service', 'canvas_add_portal', 'canvas_trace', 'canvas_layout',
-  'canvas_add_shape', 'canvas_add_diagram',
+  'canvas_add_shape', 'canvas_add_diagram', 'canvas_add_diff',
 ]);
 const MAX_LINT = 5;
 
@@ -218,7 +218,8 @@ const PLAYBOOKS =
   '(2) Investigate a bug: canvas_create kind "investigation"; canvas_add_log with the stack trace (errorLines = the failing frame lines); canvas_open_file the failing frames and canvas_trace around them; ' +
   'canvas_add_finding for each hypothesis/evidence with status (open, investigating, confirmed, ruled-out) and update statuses as you learn; highlight the root-cause line in red ("failure") with a label. ' +
   '(3) Explain a data flow: canvas_create kind "flow"; canvas_open_file each hop (or canvas_trace), canvas_connect call sites with line-anchored edges, canvas_add_flow with a `data` payload per step ' +
-  '(e.g. "Order{ id: 812, total: 49.00 }"), then canvas_play_flow. ' + COLOR_VOCAB;
+  '(e.g. "Order{ id: 812, total: 49.00 }"), then canvas_play_flow. ' +
+  '(4) Show data changing: canvas_add_diff left=order.0.json right=order.1.json under the code that made the change (attachTo the code node), then chain the next diff (order.1.json -> order.2.json) beside it; canvas_add_flow steps with `node` set to each diff node (and its code node) replay the timeline. ' + COLOR_VOCAB;
 
 export function registerTools(server: McpServer, docs: CanvasDocuments, editor: CanvasEditorProvider) {
   const ok = (result: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] });
@@ -441,6 +442,34 @@ export function registerTools(server: McpServer, docs: CanvasDocuments, editor: 
       const lines = rangeArgs(a.startLine, a.endLine, total);
       return mutate(a, (cf, totals) =>
         addWithAttach(cf, totals, { type: 'file', file, display: 'reference', ...(lines && { lines }), title: a.title }, a));
+    },
+  );
+
+  tool(
+    'canvas_add_diff',
+    'Add diff',
+    'Add a diff card comparing two workspace files: `left` (before) against `right` (after), whole files, line by line. Use it to show data or config changing, e.g. order.0.json -> order.1.json. ' +
+      'Chaining diffs (a->b, then b->c) beneath the code that produced each change shows data evolving over a timeline (a data layer under the business logic); canvas_add_flow steps can then visit each diff with `node`. ' +
+      'The card stays live: edits to either file refresh it. Diff nodes have no lines, so edges cannot anchor to a line.',
+    {
+      ...canvasArg,
+      left: z.string().describe('Left-hand (before) file, absolute or workspace-relative.'),
+      right: z.string().describe('Right-hand (after) file, absolute or workspace-relative.'),
+      title: z.string().optional().describe('Header title (defaults to "left -> right").'),
+      color: color.optional().describe('Accent color.'),
+      ...placement,
+      ...attach,
+      ...focusArg,
+    },
+    async (a) => {
+      const diffFrom = workspaceRelPath(a.left);
+      const file = workspaceRelPath(a.right);
+      await openDoc(a.left);
+      await openDoc(a.right);
+      return mutate(a, (cf, totals) =>
+        addWithAttach(cf, totals, {
+          type: 'file', display: 'diff', file, diffFrom, title: a.title, color: toPreset(a.color),
+        }, a));
     },
   );
 
@@ -851,6 +880,7 @@ export function registerTools(server: McpServer, docs: CanvasDocuments, editor: 
           case 'file': {
             bad('text', 'label', 'status', 'findingKind', 'tags', 'entryPoints', 'errorLines', 'shape', 'fields', 'sublabel');
             if (a.title !== undefined) set('title', a.title);
+            if (n.display === 'diff') bad('startLine', 'endLine');
             if (a.startLine !== undefined || a.endLine !== undefined) {
               const total = totalOf(totals, n);
               const cur = displayedRange(n, total);
@@ -903,7 +933,7 @@ export function registerTools(server: McpServer, docs: CanvasDocuments, editor: 
     (a) =>
       mutate(a, (cf, totals) => {
         const n = requireNode(cf, a.nodeId);
-        if (!isCodeNode(n)) throw new Error(`Node "${a.nodeId}" is not a code view (file node displayed as code).`);
+        if (!isCodeNode(n)) throw new Error(`Node "${a.nodeId}" is not a code view (file node displayed as code; diff nodes have no lines).`);
         for (const r of a.ranges) {
           if (r.end < r.start) throw new Error(`Range ${r.start}-${r.end} has end before start.`);
           checkLine(n, r.start, totalOf(totals, n), 'Line');
@@ -1065,7 +1095,7 @@ export function registerTools(server: McpServer, docs: CanvasDocuments, editor: 
               };
             case 'file':
               return {
-                ...base, file: n.file, display: isCanvasPath(n.file) ? 'portal' : n.display ?? 'code', title: n.title, lines: n.lines,
+                ...base, file: n.file, display: isCanvasPath(n.file) ? 'portal' : n.display ?? 'code', diffFrom: n.diffFrom, title: n.title, lines: n.lines,
                 highlights: n.highlights?.map(({ id, start, end, color: c, label }) => ({ id, start, end, color: fromPreset(c), label })),
               };
             case 'link': return { ...base, url: n.url, title: n.title };

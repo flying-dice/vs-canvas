@@ -8,6 +8,7 @@ over MCP.
 - **Map a repo.** Services grouped into domains. Zoom in to see each one's entry points, then the real code.
 - **Trace a bug.** Put the stack trace next to the code it points at, test hypotheses, and mark the root-cause line.
 - **Follow the data.** Play back a flow and watch the payload move through the actual call sites.
+- **Diff data over time.** Chain diff cards (`order.0.json` to `order.1.json` to `order.2.json`) under the code that changes them.
 - **Draw diagrams.** Flowchart, UML, C4, ERD, architecture and BPMN shapes, alongside your code.
 
 Canvases are plain `*.canvas.json` files that you commit next to your code. They store paths and line ranges,

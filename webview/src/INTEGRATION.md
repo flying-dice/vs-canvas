@@ -63,6 +63,13 @@ player.subscribe((s) => (playback = s));   // PlaybackState per frame
   `ZoomIndicator` (`zoom={viewport.current.zoom}`, `onreset={() => setViewport({...vp, zoom: 1})}`): place in absolutely
   positioned corners of the wrapper (breadcrumbs top-left, zoom indicator bottom-left).
 
+### Diff nodes
+`FileNode.display === 'diff'` (`diffFrom` = left/before, `file` = right/after) maps to `kindOf() === 'diff'` ->
+`nodes/DiffNode.svelte` -> `ui/organisms/DiffCard.svelte`. Data: `data.code` is the right file, `data.diffBase` (from
+`ToWebview.document.diffBase[nodeId]`) the left. `lib/diff.ts` (`diffLines`, `foldRows`, `diffStats`) is pure. The kind is
+in `RESIZABLE` (document-sized, scrolls its own body), has no line anchors or trace/expand actions, and is `lit` when a
+flow step targets it (`node: <id>`). Line-number clicks post `openFile` for the matching side's file.
+
 ## 6. Demo
 `?demo=showcase` (standalone vite dev only) sends `lib/showcase.ts`: a service map with 4 services in 2 purple groups plus
 a portal, an investigation (log, 2 code nodes, 3 findings), an order-flow row of 5 code nodes and two flows in

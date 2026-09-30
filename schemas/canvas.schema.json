@@ -388,9 +388,13 @@
           "description": "JSON Canvas subpath, e.g. \"#L10-L20\"; keep in sync with `lines`."
         },
         "display": {
-          "enum": ["code", "reference"],
+          "enum": ["code", "reference", "diff"],
           "default": "code",
-          "description": "code: live source view of `lines` (or the whole file). reference: compact chip that opens the file."
+          "description": "code: live source view of `lines` (or the whole file). reference: compact chip that opens the file. diff: line diff of `diffFrom` (left, before) against `file` (right, after); whole files, `lines`/`highlights` ignored."
+        },
+        "diffFrom": {
+          "type": "string",
+          "description": "display 'diff' only: workspace-relative path of the left-hand (before) file. `file` is the right-hand (after) file."
         },
         "lines": {
           "type": "array",
