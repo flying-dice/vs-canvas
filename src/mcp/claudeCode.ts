@@ -34,7 +34,9 @@ async function write(uri: vscode.Uri, text: string | undefined, url: string): Pr
  * Called whenever the server URL changes. Updates an existing entry silently; otherwise follows
  * `vsCanvas.claudeCode.mcpJson` ('ask' offers once per workspace).
  */
-export async function syncClaudeCodeConfig(url: string, state: vscode.Memento, log: (m: string) => void): Promise<void> {
+export async function syncClaudeCodeConfig(
+  url: string, state: vscode.Memento, log: (m: string) => void, version: string,
+): Promise<void> {
   const uri = mcpJsonUri();
   if (!uri) return;
   const text = await readText(uri);
@@ -59,7 +61,7 @@ export async function syncClaudeCodeConfig(url: string, state: vscode.Memento, l
       'Not now',
       never,
     );
-    if (pick === add) await setUpClaudeCode(url);
+    if (pick === add) await setUpClaudeCode(url, version);
     else if (pick === never) await state.update(DISMISSED_KEY, true);
   } catch (e) {
     log(`Could not update .mcp.json: ${e instanceof Error ? e.message : e}`);
@@ -67,7 +69,7 @@ export async function syncClaudeCodeConfig(url: string, state: vscode.Memento, l
 }
 
 /** Command: write (or update) the entry now and explain the next step. */
-export async function setUpClaudeCode(url: string | undefined): Promise<void> {
+export async function setUpClaudeCode(url: string | undefined, version: string): Promise<void> {
   const uri = mcpJsonUri();
   if (!uri) return void vscode.window.showWarningMessage('VS Canvas: open a folder to set up Claude Code for it.');
   if (!url) return void vscode.window.showWarningMessage('VS Canvas: the MCP server is not running.');
@@ -86,7 +88,7 @@ export async function setUpClaudeCode(url: string | undefined): Promise<void> {
     if (pick === open) await vscode.window.showTextDocument(uri);
     if (pick === skill) {
       try {
-        const { uri: skillUri } = await installSkill(harnessById('claude-project')!);
+        const { uri: skillUri } = await installSkill(harnessById('claude-project')!, version);
         void vscode.window.showInformationMessage(`Installed the VS Canvas skill at ${vscode.workspace.asRelativePath(skillUri)}.`);
       } catch (e) {
         void vscode.window.showErrorMessage(`VS Canvas: could not install the skill (${e instanceof Error ? e.message : e}).`);
