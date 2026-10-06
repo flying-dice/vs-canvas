@@ -6,7 +6,7 @@ import { CanvasIndex } from './canvas/index';
 import { CanvasCodeLens, CanvasesTree } from './canvas/views';
 import { addHighlights, addNode, codeSize } from './canvas/model';
 import { loadFile, workspaceRelPath } from './code/files';
-import { installAgentSkills, refreshInstalledSkills } from './agent/install';
+import { extensionVersion, installAgentSkills, refreshInstalledSkills } from './agent/install';
 import { setUpClaudeCode, syncClaudeCodeConfig } from './mcp/claudeCode';
 import { workspacePort } from './mcp/port';
 import { CanvasMcpServer } from './mcp/server';
@@ -24,8 +24,8 @@ export function activate(ctx: vscode.ExtensionContext) {
   const index = new CanvasIndex(docs);
   const defsChanged = new vscode.EventEmitter<void>();
 
-  // Keep guides installed earlier by "Install Agent Skills" current (never creates files, never prompts).
-  void refreshInstalledSkills().catch(() => {});
+  // Keep guides installed earlier by "Install Agent Skills" current when the extension is newer (never creates files, never prompts).
+  void refreshInstalledSkills(extensionVersion(), log);
 
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   status.command = 'vsCanvas.open';

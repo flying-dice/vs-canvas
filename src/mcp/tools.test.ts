@@ -187,3 +187,15 @@ describe('canvas_update_node with shapes', () => {
     expect((await call('canvas_update_node', { nodeId: 'note-3', shape: 'c4.person' })).error).toContain('not applicable');
   });
 });
+
+describe('canvas_lint fix', () => {
+  it('drops legacy vsCanvas.flows from the document and a re-lint is clean', async () => {
+    state = { nodes: [], edges: [], vsCanvas: { version: 1, title: 'T', flows: [] } } as unknown as CanvasFile;
+    expect(lintCanvas(state).some((d) => d.rule === 'legacy-flows')).toBe(true);
+    const r = await call('canvas_lint', { fix: true });
+    expect(r.error).toBeUndefined();
+    expect(r.out.applied.map((a: { rule: string }) => a.rule)).toContain('legacy-flows');
+    expect(state.vsCanvas).toEqual({ version: 1, title: 'T' });
+    expect(lintCanvas(state).some((d) => d.rule === 'legacy-flows')).toBe(false);
+  });
+});

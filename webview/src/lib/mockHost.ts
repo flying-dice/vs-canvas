@@ -2,7 +2,7 @@
 // webview posts to a demo document and echoes a fresh 'document' (then 'select' for new nodes), so every
 // interaction can be exercised outside VS Code. It is not a faithful host: layout fixes use the shared linter,
 // tracing adds a placeholder node, file picking invents a file.
-import { fixCanvas } from '../../../src/shared/lint';
+import { assignFixed, fixCanvas } from '../../../src/shared/lint';
 import { defaultRelation, markerToEnd } from '../../../src/shared/shapes';
 import type {
   CanvasFile,
@@ -195,7 +195,7 @@ export function createMockHost(initial: Doc, send: (m: ToWebview) => void): Mock
         echo();
         break;
       case 'fixLayout': {
-        const r = fixCanvas(canvas);
+        const r = fixCanvas(canvas, { only: m.rules?.length ? new Set(m.rules) : undefined });
         const want = m.nodeIds?.length ? new Set(m.nodeIds) : null;
         for (const f of r.canvas.nodes) {
           const n = canvas.nodes.find((q) => q.id === f.id);
@@ -205,7 +205,7 @@ export function createMockHost(initial: Doc, send: (m: ToWebview) => void): Mock
           n.width = f.width;
           n.height = f.height;
         }
-        if (!want) canvas.edges = r.canvas.edges;
+        if (!want) assignFixed(canvas, { ...r.canvas, nodes: canvas.nodes });
         echo();
         break;
       }

@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { loadFile, openDoc, relPath, resolveUri } from '../code/files';
 import { planTrace } from '../code/trace';
 import type { CanvasFile, FileNode } from '../shared/canvasFile';
-import { fixCanvas } from '../shared/lint';
+import { assignFixed, fixCanvas } from '../shared/lint';
 import type { ConnectFrom, FromWebview, PortalPreview, ResolvedCode, ToWebview } from '../shared/protocol';
 import { CANVAS_VIEW_TYPE, type CanvasDocuments } from './documents';
 import { distWebview, webviewHtml } from './html';
@@ -387,9 +387,8 @@ export class CanvasEditorProvider implements vscode.CustomTextEditorProvider, vs
           await this.docs.edit(s.doc.uri, (f) => {
             if (m.nodeIds?.length) fixOnly(f, m.nodeIds, opts);
             else {
-              const r = fixCanvas(f, opts);
-              f.nodes = r.canvas.nodes;
-              f.edges = r.canvas.edges;
+              const only = m.rules?.length ? new Set(m.rules) : undefined;
+              assignFixed(f, fixCanvas(f, { ...opts, only }).canvas);
             }
           }, { save: false });
         });

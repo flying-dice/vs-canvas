@@ -718,20 +718,30 @@ export function applyLintFix(canvas: CanvasFile, fix: LintFix): CanvasFile {
   return work;
 }
 
+/** Copy a fixed canvas (from `fixCanvas`) back onto a live document: nodes, edges and `vsCanvas` metadata. */
+export function assignFixed(target: CanvasFile, fixed: CanvasFile): void {
+  target.nodes = fixed.nodes;
+  target.edges = fixed.edges;
+  if (fixed.vsCanvas) target.vsCanvas = fixed.vsCanvas;
+  else delete target.vsCanvas;
+}
+
 /**
  * Apply the fixes of all fixable diagnostics to a copy of the canvas. Each pass re-detects after every applied fix
  * (so positions are always chosen against the current layout) and moves each node at most once, until nothing is
- * left to fix or maxPasses is reached. Only moves/resizes/reorders are applied unless `destructive` is set, which
- * also removes dangling, duplicate and self-loop edges.
+ * left to fix or maxPasses is reached. Only moves/resizes/reorders and dropping dead metadata keys (such as
+ * `vsCanvas.flows`) are applied unless `destructive` is set, which also removes dangling, duplicate and self-loop
+ * edges. `only` restricts the applied fixes to the listed rules (for one-rule fixes such as `legacy-flows`).
  */
 export function fixCanvas(
   canvas: CanvasFile,
-  opts: LintOptions & { maxPasses?: number; rules?: LintOptions['rules']; destructive?: boolean } = {},
+  opts: LintOptions & { maxPasses?: number; rules?: LintOptions['rules']; destructive?: boolean; only?: ReadonlySet<LintRuleId> } = {},
 ): { canvas: CanvasFile; applied: LintDiagnostic[]; remaining: LintDiagnostic[] } {
   const work = structuredClone(canvas);
   const applied: LintDiagnostic[] = [];
   const fixable = new Set<LintRuleId>(AUTO_FIX_RULES);
   if (opts.destructive) DESTRUCTIVE_FIX_RULES.forEach((r) => fixable.add(r));
+  if (opts.only) for (const r of [...fixable]) if (!opts.only.has(r)) fixable.delete(r);
   const rank = (r: LintRuleId) => FIX_PRIORITY.indexOf(r);
 
   for (let pass = 0; pass < (opts.maxPasses ?? 8); pass++) {

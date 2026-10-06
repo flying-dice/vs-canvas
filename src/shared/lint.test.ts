@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CanvasFile, CanvasFileEdge, CanvasFileNode } from './canvasFile';
-import { GEOMETRY, applyLintFix, estimateTextHeight, fixCanvas, lintCanvas, type LintRuleId } from './lint';
+import { GEOMETRY, applyLintFix, assignFixed, estimateTextHeight, fixCanvas, lintCanvas, type LintRuleId } from './lint';
 import { edgeGeometry } from './geometry';
 
 const note = (id: string, x: number, y: number, w = 200, h = 100, extra: object = {}): CanvasFileNode =>
@@ -351,6 +351,26 @@ describe('legacy-flows', () => {
     expect(canvas.nodes).toEqual(input.nodes);
     expect(remaining.some((d) => d.rule === 'legacy-flows')).toBe(false);
     expect(input.vsCanvas).toHaveProperty('flows'); // input not mutated
+  });
+
+  it('fixCanvas with only: legacy-flows removes flows and moves no node', () => {
+    const input = { ...withFlows(), nodes: [note('a', 0, 0), note('b', 50, 20)] };
+    expect(has(input, 'node-overlap')).toBe(true);
+    const { canvas, applied } = fixCanvas(input, { only: new Set<LintRuleId>(['legacy-flows']) });
+    expect(applied.map((d) => d.rule)).toEqual(['legacy-flows']);
+    expect(canvas.vsCanvas).not.toHaveProperty('flows');
+    expect(canvas.nodes).toEqual(input.nodes);
+    expect(fixCanvas(input).applied.map((d) => d.rule)).toContain('node-overlap');
+  });
+
+  it('assignFixed copies nodes, edges and vsCanvas, and clears vsCanvas when the fixed canvas has none', () => {
+    const target = withFlows();
+    assignFixed(target, fixCanvas(target).canvas);
+    expect(target.vsCanvas).toEqual({ version: 1, title: 'T' });
+    const bare = cf([note('z', 0, 0)]);
+    assignFixed(target, bare);
+    expect(target.nodes).toBe(bare.nodes);
+    expect('vsCanvas' in target).toBe(false);
   });
 
   it('can be switched off', () => {

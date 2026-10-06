@@ -530,7 +530,9 @@
   const fixLayout = (nodeIds?: string[]) => post({ type: 'fixLayout', ...(nodeIds?.length ? { nodeIds } : {}) });
   function fixIssue(d: LintDiagnostic) {
     const ids = new Set([...d.nodeIds, ...(d.fix?.moves?.map((m) => m.id) ?? [])]);
-    fixLayout([...ids]);
+    // A diagnostic with no nodes (e.g. legacy-flows) must fix only its own rule, not run the whole layout fix.
+    if (!ids.size) post({ type: 'fixLayout', rules: [d.rule] });
+    else fixLayout([...ids]);
   }
 
   // Auto-sized nodes (code, fileRef): report their measured size back into the document.

@@ -16,7 +16,7 @@ import { planTrace } from '../code/trace';
 import {
   COLOR_PRESETS, SEMANTIC_COLORS, type Side, type CanvasFile, type CanvasFileNode, type CanvasMeta, type EntryPoint,
 } from '../shared/canvasFile';
-import { estimateShapeHeight, estimateTextHeight, fixCanvas, lintCanvas, type LintDiagnostic } from '../shared/lint';
+import { assignFixed, estimateShapeHeight, estimateTextHeight, fixCanvas, lintCanvas, type LintDiagnostic } from '../shared/lint';
 import type { CanvasFileEdge, EdgeMarker } from '../shared/canvasFile';
 import {
   EDGE_MARKERS, LIBRARIES, RELATIONS, SHAPES, defaultFrameOf, defaultRelation, libraryById, relationById, shapeById, shapesIn,
@@ -1053,8 +1053,7 @@ export function registerTools(server: McpServer, docs: CanvasDocuments, editor: 
       }
       const res = await docs.edit(uri, (f) => {
         const r = fixCanvas(f, { ...opts, destructive: a.destructive });
-        f.nodes = r.canvas.nodes;
-        f.edges = r.canvas.edges;
+        assignFixed(f, r.canvas);
         return r;
       }, { save: true });
       await editor.reveal(uri);
