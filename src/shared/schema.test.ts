@@ -15,3 +15,11 @@ describe('canvas.schema.json stays in sync with shapes.ts', () => {
     expect(defs.textNode.properties.variant.enum).toContain('shape');
   });
 });
+
+describe('canvas.schema.json legacy flows', () => {
+  it('rejects vsCanvas.flows, matching the legacy-flows lint rule', () => {
+    const meta = schema.properties.vsCanvas;
+    expect(meta.additionalProperties).toBe(false);
+    expect(Object.keys(meta.properties)).not.toContain('flows');
+  });
+});

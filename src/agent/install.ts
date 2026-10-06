@@ -1,7 +1,7 @@
 import * as os from 'node:os';
 import * as vscode from 'vscode';
 import guide from '../../agent/skill.md';
-import { HARNESSES, renderInstall, type Harness, type HarnessId } from './skills';
+import { HARNESSES, refreshAll, renderInstall, type Harness, type HarnessId } from './skills';
 
 // "VS Canvas: Install Agent Skills": writes the canvas guide for the agent harnesses the user picks.
 
@@ -26,14 +26,29 @@ function rootOf(h: Harness): vscode.Uri | undefined {
   return h.scope === 'user' ? vscode.Uri.file(os.homedir()) : vscode.workspace.workspaceFolders?.[0]?.uri;
 }
 
-/** Writes the guide for one harness. Returns the file and whether it changed. */
-export async function installSkill(h: Harness): Promise<{ uri: vscode.Uri; changed: boolean }> {
+/** Writes the guide for one harness, stamped with `version` (the running extension's). Returns the file and whether it changed. */
+export async function installSkill(h: Harness, version: string): Promise<{ uri: vscode.Uri; changed: boolean }> {
   const root = rootOf(h);
   if (!root) throw new Error('Open a folder first: project skills are written into the workspace.');
   const uri = vscode.Uri.joinPath(root, ...h.path.split('/'));
-  const next = renderInstall(h, guide, await readText(uri));
+  const next = renderInstall(h, guide, version, await readText(uri));
   if (next !== undefined) await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(next));
   return { uri, changed: next !== undefined };
+}
+
+/**
+ * Rewrites guides installed earlier by "Install Agent Skills" when they were written by an older extension version.
+ * Only files VS Canvas already manages are touched; nothing is created and the user is never prompted. Never throws;
+ * results go to `log`.
+ */
+export async function refreshInstalledSkills(version: string, log: (m: string) => void): Promise<void> {
+  const { updated, failed } = await refreshAll(guide, version, {
+    root: (h) => rootOf(h)?.fsPath,
+    read: (p) => readText(vscode.Uri.file(p)),
+    write: (p, text) => Promise.resolve(vscode.workspace.fs.writeFile(vscode.Uri.file(p), new TextEncoder().encode(text))),
+  });
+  for (const p of updated) log(`Updated agent guide to ${version}: ${p}`);
+  for (const f of failed) log(`Could not update agent guide ${f.path}: ${f.error}`);
 }
 
 /** Harnesses that look in use here (their config exists), plus Claude Code for the project by default. */
@@ -47,7 +62,7 @@ async function detected(): Promise<Set<HarnessId>> {
   return out;
 }
 
-export async function installAgentSkills(preselect?: HarnessId[]): Promise<void> {
+export async function installAgentSkills(version: string, preselect?: HarnessId[]): Promise<void> {
   const hasFolder = !!vscode.workspace.workspaceFolders?.length;
   const pre = preselect ? new Set(preselect) : await detected();
   const items = HARNESSES.filter((h) => hasFolder || h.scope === 'user').map((h) => ({
@@ -67,7 +82,7 @@ export async function installAgentSkills(preselect?: HarnessId[]): Promise<void>
   const failed: string[] = [];
   for (const { harness } of picked) {
     try {
-      written.push({ h: harness, ...(await installSkill(harness)) });
+      written.push({ h: harness, ...(await installSkill(harness, version)) });
     } catch (e) {
       failed.push(`${harness.label}: ${e instanceof Error ? e.message : e}`);
     }

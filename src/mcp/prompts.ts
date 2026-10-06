@@ -45,7 +45,7 @@ export function registerPrompts(server: McpServer) {
     'explain_flow',
     {
       title: 'Explain a data flow',
-      description: 'Trace how data moves through the code and play it back.',
+      description: 'Trace how data moves through the code.',
       argsSchema: { question: z.string().describe('e.g. "What happens to an order after I click pay?"') },
     },
     ({ question }) => user(
@@ -53,8 +53,8 @@ export function registerPrompts(server: McpServer) {
         '1. canvas_create with kind "flow".\n' +
         '2. Find the hops (code_symbols, code_call_hierarchy) and canvas_open_file each with a tight range, or use canvas_trace from the entry point.\n' +
         '3. canvas_connect the call sites with line-anchored edges in order, labelled "1. ...", "2. ...".\n' +
-        '4. canvas_add_flow with one step per hop: from/to node ids, startLine/endLine of the target lines, a caption and a `data` payload showing how the value changes (e.g. "Order{ id: 812, total: 49.00 }"). Use parallel true for forks.\n' +
-        '5. canvas_play_flow, then summarise in a canvas_add_note.\n' + COLORS,
+        '4. Label each edge with the payload that crosses it (e.g. "Order{ id: 812, total: 49.00 }") and canvas_highlight_lines on the lines that transform the data. Use canvas_add_diff to show before/after data files if useful.\n' +
+        '5. Summarise the path in a canvas_add_note.\n' + COLORS,
     ),
   );
 

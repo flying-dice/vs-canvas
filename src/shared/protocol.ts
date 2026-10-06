@@ -1,5 +1,6 @@
 // Message contract between the extension host and a canvas webview (one webview per open *.canvas.json).
 // The canvas document itself uses the on-disk format in ./canvasFile. All line numbers are 1-based and inclusive.
+import type { LintRuleId } from './lint';
 import type { CanvasFile, CanvasFileEdge, CanvasFileNode, CanvasMeta } from './canvasFile';
 
 export type * from './canvasFile';
@@ -68,8 +69,6 @@ export type ToWebview =
    * "show me these", e.g. MCP canvas_focus with nodeIds): frame the targets at a readable zoom.
    */
   | { type: 'focus'; nodeIds?: string[]; zoom?: boolean }
-  /** Start playing a flow (from MCP canvas_play_flow). `fromStep` defaults to 0. */
-  | { type: 'playFlow'; flowId: string; fromStep?: number }
   /** Result of a 'pickFile' request: the host has added the node (and edge); focus/select it. */
   | { type: 'select'; nodeIds: string[]; edit?: boolean };
 
@@ -123,7 +122,7 @@ export type FromWebview =
   | { type: 'trace'; nodeId: string; line: number; direction: 'incoming' | 'outgoing' }
   /** Node toolbar: grow/shrink the displayed range of a code node. */
   | { type: 'expandRange'; nodeId: string; before: number; after: number }
-  /** Apply lint fixes (all layout issues, or those for the given node ids). */
-  | { type: 'fixLayout'; nodeIds?: string[] }
+  /** Apply lint fixes (all layout issues, those for the given node ids, or only fixes of the given rules). */
+  | { type: 'fixLayout'; nodeIds?: string[]; rules?: LintRuleId[] }
   /** Persist the pinned flag of this canvas. */
   | { type: 'setPinned'; pinned: boolean };

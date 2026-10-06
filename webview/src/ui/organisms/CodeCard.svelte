@@ -13,7 +13,6 @@
     tokens = null,
     selected = false,
     pulseIds = [],
-    activeLines = [],
     onlineclick,
     lineHandles,
     lod = 'near',
@@ -24,8 +23,6 @@
     selected?: boolean;
     /** Highlight ids to flash once (newly added); the parent decides which. */
     pulseIds?: string[];
-    /** Flow playback: line ranges [start, end] (absolute, inclusive) lit as the current step's target. */
-    activeLines?: readonly (readonly [number, number])[];
     onlineclick?: (line: number) => void;
     /** Rendered inside each line row, given the absolute line number. */
     lineHandles?: Snippet<[number]>;
@@ -70,7 +67,6 @@
         {text}
         tokens={tokens?.[i] ?? null}
         pulse={hs.some((h) => pulseIds.includes(h.id))}
-        active={activeLines.some((r) => n >= r[0] && n <= r[1])}
         color={hs[0] ? (hs[0].color ?? '3') : undefined}
         pills={hs.filter((h) => h.label && h.start === n).map((h) => ({ id: h.id, color: h.color, label: h.label! }))}
         {onlineclick}

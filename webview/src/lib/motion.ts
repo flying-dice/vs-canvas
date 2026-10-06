@@ -19,8 +19,6 @@ export const MOTION = {
   cameraCoalesceMs: 150,
   /** Screen-space margin kept around focused nodes. */
   cameraMarginPx: 48,
-  /** Flow playback follows steps at this zoom when the viewer is zoomed out further (code lines stay legible). */
-  playbackZoom: 0.85,
   /** Never zoom out further than this to focus a subset (keeps code readable). */
   cameraFocusMinZoom: 0.35,
   cameraFitMinZoom: 0.05,

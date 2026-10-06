@@ -15,12 +15,6 @@ export type PlanInput = {
   anchor?: Rect;
   /** Skip the "already visible" check. */
   force?: boolean;
-  /**
-   * Content must be readable (e.g. flow playback lighting up code lines): below this zoom, move to exactly this
-   * zoom, framing the targets if they fit, else centring on the anchor. A fixed zoom keeps consecutive steps to
-   * calm pans instead of zoom pumping.
-   */
-  readableZoom?: number;
   /** An explicit "show me these": always frame the targets (zooming in up to max zoom), even if visible. */
   fit?: boolean;
 };
@@ -35,7 +29,7 @@ export function planCamera(p: PlanInput): Viewport | null {
   const usableW = Math.max(1, size.width - 2 * m);
   const usableH = Math.max(1, size.height - 2 * m);
 
-  if (!p.force && !p.fit && !(p.readableZoom && z < p.readableZoom)) {
+  if (!p.force && !p.fit) {
     // Visible rect in flow coordinates, shrunk by the margin.
     const left = (-vp.x + m) / z;
     const top = (-vp.y + m) / z;
@@ -49,12 +43,6 @@ export function planCamera(p: PlanInput): Viewport | null {
     x: size.width / 2 - (r.x + r.width / 2) * zoom,
     y: size.height / 2 - (r.y + r.height / 2) * zoom,
   });
-
-  if (p.readableZoom && z < p.readableZoom) {
-    const rz = p.readableZoom;
-    const fits = b.width * rz <= usableW && b.height * rz <= usableH;
-    return centerOn(fits ? b : (p.anchor ?? b), rz);
-  }
 
   if (p.fit) {
     const fz = Math.min(usableW / Math.max(b.width, 1), usableH / Math.max(b.height, 1));
@@ -89,7 +77,7 @@ export type CameraDeps = {
   busy(): boolean;
 };
 
-type Request = { ids: Set<string>; all: boolean; last?: string; instant: boolean; force: boolean; readableZoom?: number; fit?: boolean };
+type Request = { ids: Set<string>; all: boolean; last?: string; instant: boolean; force: boolean; fit?: boolean };
 
 /** Coalesces focus requests and moves the viewport calmly. See MOTION for the tunables. */
 export class Camera {
@@ -103,7 +91,7 @@ export class Camera {
 
   constructor(private d: CameraDeps) {}
 
-  request(ids?: string[], opts: { instant?: boolean; force?: boolean; immediate?: boolean; readableZoom?: number; fit?: boolean } = {}) {
+  request(ids?: string[], opts: { instant?: boolean; force?: boolean; immediate?: boolean; fit?: boolean } = {}) {
     const r = (this.req ??= { ids: new Set(), all: false, instant: false, force: false });
     if (!ids || ids.length === 0) r.all = true;
     else {
@@ -113,7 +101,6 @@ export class Camera {
     r.instant ||= !!opts.instant;
     r.force ||= !!opts.force;
     r.fit ||= !!opts.fit;
-    if (opts.readableZoom) r.readableZoom = Math.max(r.readableZoom ?? 0, opts.readableZoom);
     if (opts.immediate || opts.instant) {
       clearTimeout(this.timer);
       this.timer = undefined;
@@ -194,7 +181,6 @@ export class Camera {
       all,
       anchor: this.d.nodeBounds(anchorId) ?? undefined,
       force: r.force,
-      readableZoom: r.readableZoom,
       fit: r.fit,
     });
     if (!next) return;

@@ -14,7 +14,7 @@ soft tick on each agent action. No voice-over; on-screen captions carry the stor
 | --- | --- | --- | --- |
 | 1 | Map an unfamiliar repo | "What even is this system?" | Domain map, pinned and always one keystroke away; semantic zoom from services to code |
 | 2 | Trace a bug | "Why does checkout sometimes charge twice?" | Investigation board: stack trace to code, hypotheses ruled out or confirmed, root cause on one line |
-| 3 | Follow the data | "What happens to an order after I click pay?" | Flow playback: a packet travels through the real code and the payload changes shape at each hop |
+| 3 | Follow the data | "What happens to an order after I click pay?" | Data-flow board: real call sites connected hop by hop, each edge labelled with the payload at that point |
 | 4 | Keep it and share it | "How do I hand this to my team?" | Canvases are committed `.canvas.json` files; the linter keeps them clean; drag-to-connect editing |
 
 ## Storyboard
@@ -53,16 +53,14 @@ Timings are targets. Captions are sentence case, at most 7 words, bottom-left, i
 
 ### 0:33–0:48: Use case 3, follow the data
 - **Prompt:** `Show how an order flows from the pay button to the ledger.`
-- **Shot:** a flow across 5 code nodes (`CheckoutButton.tsx` → `api/orders.ts` → `payments/charge.ts` →
-  `payments/retry.ts` → `ledger/write.ts`). Press play in the transport bar.
-- **Motion (the hero moment):** a cyan packet travels each edge in sequence. At every hop:
-  - the target line lights up
-  - the camera glides to follow
-  - a small data chip beside the packet shows the payload changing:
-    `{ cartId }` → `Order{ id: 812, total: 49.00 }` → `Charge{ status: 'pending' }` → `LedgerEntry{ … }`
-- **Beat:** at `retry.ts` the packet splits in two. That visually explains the bug from use case 2. Hold
-  for 1s.
-- **Caption:** "Watch the data move."
+- **Shot:** the agent opens 5 code nodes (`CheckoutButton.tsx` → `api/orders.ts` → `payments/charge.ts` →
+  `payments/retry.ts` → `ledger/write.ts`) and connects them on the exact call-site lines.
+- **Motion (the hero moment):** the agent connects each call site one after another, then highlights the key
+  line in each hop (`canvas_highlight_lines`). Each edge carries a label with the payload changing shape:
+  `{ cartId }` → `Order{ id: 812, total: 49.00 }` → `Charge{ status: 'pending' }` → `LedgerEntry{ … }`
+- **Beat:** `retry.ts` calls the ledger from two places. The two edges visually explain the bug from use
+  case 2. Hold for 1s.
+- **Caption:** "Follow the data, hop by hop."
 
 ### 0:48–0:56: Use case 4, keep it and share it
 - **Shot, split screen:**
@@ -103,7 +101,7 @@ The features every shot depends on. Each must work live before recording.
 - [ ] Semantic zoom: card → entry points → code lines
 - [ ] Investigation board: log node with clickable frames, hypothesis cards with open, ruled-out and confirmed
       states
-- [ ] Flow playback: transport bar, packet along edges, data chips, camera follow, packet split at a fork
+- [ ] Data-flow board: line-anchored edges with payload labels, line highlights
 - [ ] Drag-out connection onto empty canvas → quick-add menu; alignment guides
 - [ ] Linter badge and one-click "Fix layout" with animated resolve
 - [ ] Calm camera, and reduced motion off for recording

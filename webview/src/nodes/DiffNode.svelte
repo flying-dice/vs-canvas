@@ -6,7 +6,6 @@
   import { theme } from '../lib/theme.svelte';
   import { tokenize, type ThemedToken } from '../lib/highlight';
   import { useLod } from '../lib/lod.svelte';
-  import { ui } from '../lib/ui.svelte';
   import DiffCard from '../ui/organisms/DiffCard.svelte';
   import Resizer from './Resizer.svelte';
   import SideHandles from './SideHandles.svelte';
@@ -41,7 +40,6 @@
   $effect(() => highlight(left, (t) => (leftTokens = t)));
   $effect(() => highlight(right, (t) => (rightTokens = t)));
 
-  const lit = $derived(ui.steps.some((s) => s.nodeId === id));
 </script>
 
 <Resizer {id} {selected} minWidth={360} minHeight={160} />
@@ -54,7 +52,6 @@
   {leftTokens}
   {rightTokens}
   {selected}
-  {lit}
   lod={lod.current}
   onlineclick={(side, line) => post({ type: 'openFile', path: side === 'left' ? (node.diffFrom ?? node.file) : node.file, line })}
 />

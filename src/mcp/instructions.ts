@@ -6,7 +6,7 @@ Use it without being asked when explaining how code works across more than two f
 
 - Start with canvas_create (kind: map | investigation | flow | notes) or canvas_list + canvas_open.
 - Call paths: canvas_trace from the entry symbol (one call adds code nodes, line-anchored edges and layout), then canvas_highlight_lines on the lines that matter.
-- Data flows: canvas_add_flow with one step per hop and the payload in "data", then canvas_play_flow.
+- Data flows: canvas_open_file each hop, canvas_connect the call sites with line-anchored edges labelled with the payload, highlight the transforming lines, and summarise in a canvas_add_note.
 - Bugs: canvas_add_log with the stack trace, open the failing frames, one canvas_add_finding per hypothesis and update its status (investigating -> confirmed | ruled-out); mark the root-cause line with colour "failure".
 - Repo maps: canvas_add_service per domain with real entryPoints, grouped with canvas_add_group (colour "domain"); pin the map.
 - Diagrams (C4, flowchart, UML, ERD, architecture, BPMN): canvas_add_diagram builds a whole diagram in one call; canvas_list_shapes lists shapes; sequence diagrams: canvas_add_mermaid.

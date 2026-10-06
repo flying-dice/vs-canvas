@@ -11,7 +11,6 @@
     tokens = null,
     color,
     pulse = false,
-    active = false,
     pills = [],
     onlineclick,
     handles,
@@ -23,8 +22,6 @@
     color?: string;
     /** Flash the line background once (a highlight was just added). */
     pulse?: boolean;
-    /** Flow playback: this line is the current step's target (cyan tint + one pulse). */
-    active?: boolean;
     /** Labels to show at the right end of the row. */
     pills?: { id: string; color?: string; label: string }[];
     onlineclick?: (n: number) => void;
@@ -33,7 +30,7 @@
   } = $props();
 </script>
 
-<div class="row" class:hl={!!color} class:pulse class:active style={color ? `--hl: ${canvasColor(color)}` : ''}>
+<div class="row" class:hl={!!color} class:pulse style={color ? `--hl: ${canvasColor(color)}` : ''}>
   <LineNumber {n} onclick={onlineclick} />
   <CodeText {text} {tokens} />
   {#each pills as p (p.id)}<HighlightPill color={p.color} label={p.label} />{/each}
@@ -54,19 +51,6 @@
   .row.pulse {
     animation: line-pulse 700ms ease-out;
   }
-  .row.active {
-    border-left-color: var(--vscode-terminal-ansiCyan, #29b8db);
-    background: color-mix(in srgb, var(--vscode-terminal-ansiCyan, #29b8db) 24%, transparent);
-    animation: line-active 600ms ease-out;
-  }
-  @keyframes line-active {
-    0% {
-      background: color-mix(in srgb, var(--vscode-terminal-ansiCyan, #29b8db) 70%, transparent);
-    }
-    100% {
-      background: color-mix(in srgb, var(--vscode-terminal-ansiCyan, #29b8db) 24%, transparent);
-    }
-  }
   @keyframes line-pulse {
     0% {
       background: color-mix(in srgb, var(--hl) 70%, transparent);
@@ -76,8 +60,7 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .row.pulse,
-    .row.active {
+    .row.pulse {
       animation: none;
     }
   }

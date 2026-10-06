@@ -168,7 +168,8 @@
               "empty-group",
               "missing-file",
               "unknown-shape",
-              "diff-missing-base"
+              "diff-missing-base",
+              "legacy-flows"
             ]
           }
         },

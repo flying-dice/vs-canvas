@@ -3,6 +3,7 @@ import type { CanvasFile } from '../shared/canvasFile';
 import { applyLintFix, fixCanvas, lintCanvas, type LintDiagnostic, type LintFix, type LintSeverity } from '../shared/lint';
 import { lintOptionsFor, lintSettings } from './lintSupport';
 import { parseCanvas, serializeCanvas } from './model';
+import { lineOfFlowsKey, lineOfId } from './textLines';
 
 const SOURCE = 'canvas-lint';
 const DEBOUNCE_MS = 300;
@@ -13,16 +14,6 @@ const SEVERITY: Record<LintSeverity, vscode.DiagnosticSeverity> = {
   warning: vscode.DiagnosticSeverity.Warning,
   info: vscode.DiagnosticSeverity.Information,
 };
-
-/** Line of `"id": "<id>"` in the JSON text (0 when not found). */
-export function lineOfId(text: string, id: string | undefined): number {
-  if (!id) return 0;
-  const m = new RegExp(`"id"\\s*:\\s*${JSON.stringify(id).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).exec(text);
-  if (!m) return 0;
-  let line = 0;
-  for (let i = 0; i < m.index; i++) if (text.charCodeAt(i) === 10) line++;
-  return line;
-}
 
 /** Problems-panel diagnostics for open canvas documents, with quick fixes. */
 export class CanvasLintProvider implements vscode.CodeActionProvider, vscode.Disposable {
@@ -78,7 +69,8 @@ export class CanvasLintProvider implements vscode.CodeActionProvider, vscode.Dis
     const byMessage = new Map<string, LintDiagnostic>();
     const out = diags.map((d) => {
       byMessage.set(d.message, d);
-      const line = Math.min(lineOfId(text, d.nodeIds[0] ?? d.edgeIds[0]), Math.max(0, doc.lineCount - 1));
+      const at = d.rule === 'legacy-flows' ? lineOfFlowsKey(text) : lineOfId(text, d.nodeIds[0] ?? d.edgeIds[0]);
+      const line = Math.min(at, Math.max(0, doc.lineCount - 1));
       const diag = new vscode.Diagnostic(doc.lineAt(line).range, d.message, SEVERITY[d.severity]);
       diag.source = SOURCE;
       diag.code = d.rule;

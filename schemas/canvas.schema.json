@@ -58,67 +58,6 @@
         "pinned": {
           "type": "boolean",
           "description": "Pinned canvases are listed first and open with Canvas: Open Pinned Map."
-        },
-        "flows": {
-          "type": "array",
-          "description": "Playable flows: a packet travels edges in order.",
-          "items": {
-            "type": "object",
-            "required": ["id", "title", "steps"],
-            "additionalProperties": false,
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              },
-              "description": {
-                "type": "string"
-              },
-              "steps": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "required": ["id"],
-                  "additionalProperties": false,
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "edge": {
-                      "type": "string"
-                    },
-                    "node": {
-                      "type": "string"
-                    },
-                    "lines": {
-                      "type": "array",
-                      "items": {
-                        "type": "integer",
-                        "minimum": 1
-                      },
-                      "minItems": 2,
-                      "maxItems": 2
-                    },
-                    "caption": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "string"
-                    },
-                    "parallel": {
-                      "type": "boolean"
-                    },
-                    "durationMs": {
-                      "type": "number",
-                      "exclusiveMinimum": 0
-                    }
-                  }
-                }
-              }
-            }
-          }
         }
       }
     }

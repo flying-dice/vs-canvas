@@ -1,10 +1,9 @@
 <script module lang="ts">
   import type { IconName } from '../atoms/Icon.svelte';
   export type CommandNode = { id: string; title: string; path?: string; text?: string; icon?: IconName };
-  export type CommandFlow = { id: string; title: string; description?: string };
   export type CommandCanvas = { path: string; title: string };
   export type CommandAction = { id: string; label: string; shortcut?: string; icon?: IconName };
-  export type CommandGroup = 'action' | 'node' | 'flow' | 'canvas';
+  export type CommandGroup = 'action' | 'node' | 'canvas';
   export type CommandSelection = { group: CommandGroup; id: string };
 </script>
 
@@ -15,7 +14,6 @@
   let {
     open = $bindable(false),
     nodes = [],
-    flows = [],
     canvases = [],
     actions = [],
     shortcut = true,
@@ -23,7 +21,6 @@
   }: {
     open?: boolean;
     nodes?: CommandNode[];
-    flows?: CommandFlow[];
     canvases?: CommandCanvas[];
     actions?: CommandAction[];
     /** Cmd/Ctrl+K toggles the bar. */
@@ -35,10 +32,9 @@
   const GROUPS: { key: CommandGroup; title: string }[] = [
     { key: 'action', title: 'Actions' },
     { key: 'node', title: 'Nodes' },
-    { key: 'flow', title: 'Flows' },
     { key: 'canvas', title: 'Canvases' },
   ];
-  const LIMIT: Record<CommandGroup, number> = { action: 6, node: 8, flow: 4, canvas: 4 };
+  const LIMIT: Record<CommandGroup, number> = { action: 6, node: 8, canvas: 4 };
 
   let query = $state('');
   let active = $state(0);
@@ -50,7 +46,6 @@
     const all: Row[] = [
       ...actions.map((a): Row => ({ group: 'action', id: a.id, label: a.label, icon: a.icon ?? 'command', shortcut: a.shortcut, s: scoreFields(q, [[a.label, 1]]) })),
       ...nodes.map((n): Row => ({ group: 'node', id: n.id, label: n.title || 'Untitled', detail: n.path, icon: n.icon ?? 'note', s: scoreFields(q, [[n.title, 1], [n.path, 0.8], [n.text, 0.4]]) })),
-      ...flows.map((f): Row => ({ group: 'flow', id: f.id, label: f.title, detail: f.description, icon: 'flow', s: scoreFields(q, [[f.title, 1], [f.description, 0.4]]) })),
       ...canvases.map((c): Row => ({ group: 'canvas', id: c.path, label: c.title, detail: c.path, icon: 'map', s: scoreFields(q, [[c.title, 1], [c.path, 0.6]]) })),
     ].filter((r) => r.s > 0);
     const out: Row[] = [];
@@ -116,7 +111,7 @@
         <input
           bind:this={input}
           bind:value={query}
-          placeholder="Search nodes, flows, canvases and actions"
+          placeholder="Search nodes, canvases and actions"
           spellcheck="false"
           role="combobox"
           aria-expanded="true"

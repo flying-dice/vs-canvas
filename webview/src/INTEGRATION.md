@@ -26,28 +26,7 @@ Adapters (`ServiceNode`, `CodeNode`) call `useLod()` (`lib/lod.svelte.ts`), whic
 hysteresis (far < 0.45 <= mid < 0.9 <= near). Nothing to wire. Pure helpers live in `lib/lod.ts`. `CodeNode` now passes
 `lod` to `CodeCard`; in `far` the card keeps its measured size (overlay), so the `measure` reporting stays correct.
 
-## 4. Flow playback
-```ts
-import { createPlayer } from './lib/playback';
-const player = createPlayer(flow, { measure: (edgeId) => pathEl(edgeId)?.getTotalLength() });
-player.subscribe((s) => (playback = s));   // PlaybackState per frame
-```
-- On `{type:'playFlow', flowId, fromStep}`: `player.setFlow(flow); player.seekStep(...)/seek(...); player.play()`.
-- Render `<PlaybackBar>` inside the canvas wrapper (it is `position:absolute; bottom-center`; the wrapper must be
-  `position:relative`). Props map 1:1 to `PlaybackState`: `playing`, `progress`, `ticks={player.timeline.ticks}`,
-  `currentIndex={s.groupIndex}`, `stepCount={player.timeline.groups.length}`, `caption`, `speed`. Callbacks:
-  `onplaypause={player.toggle}`, `onstep={player.step}`, `onseek={player.seekFraction}`,
-  `onseekstep={(i) => player.seekStep(player.timeline.entries[player.timeline.groups[i].entries[0]].index)}`,
-  `onspeed={player.setSpeed}`, `onflowchange` (create a new player / `setFlow`). Space and arrow keys are handled by the
-  bar itself (`keyboard` prop).
-- In `CanvasEdge.svelte`, for each `activeSteps` entry whose `edgeId === id`, render inside the edge SVG
-  `<FlowPacket path={pathEl} progress={a.progress} zoom={viewport.zoom} />` (bind the `BaseEdge` path element).
-  Render `<DataChip text={a.data}>` in an `EdgeLabel`/`ViewportPortal` at the packet position
-  (`path.getPointAtLength(progress * len)`), or at the target node for node steps.
-- Camera follow: on `currentIndex` change call `camera.request([targetNodeId])` (see `lib/camera.ts`); light the target
-  `lines` by adding a temporary highlight/pulse to that code node.
-
-## 5. Interaction chrome
+## 4. Interaction chrome
 - `QuickAddMenu`: on `onConnectEnd` over the empty pane, or pane double-click, render it at the screen point (relative
   to the wrapper). `onselect(id)` ids: `sticky note text code finding log mermaid service link`. `code` -> post
   `pickFile`; others -> `addConnected` (or `addNode`) with the defaults for that kind (`finding`: `variant:'finding'`,
@@ -67,10 +46,8 @@ player.subscribe((s) => (playback = s));   // PlaybackState per frame
 `FileNode.display === 'diff'` (`diffFrom` = left/before, `file` = right/after) maps to `kindOf() === 'diff'` ->
 `nodes/DiffNode.svelte` -> `ui/organisms/DiffCard.svelte`. Data: `data.code` is the right file, `data.diffBase` (from
 `ToWebview.document.diffBase[nodeId]`) the left. `lib/diff.ts` (`diffLines`, `foldRows`, `diffStats`) is pure. The kind is
-in `RESIZABLE` (document-sized, scrolls its own body), has no line anchors or trace/expand actions, and is `lit` when a
-flow step targets it (`node: <id>`). Line-number clicks post `openFile` for the matching side's file.
+in `RESIZABLE` (document-sized, scrolls its own body), has no line anchors or trace/expand actions. Line-number clicks post `openFile` for the matching side's file.
 
-## 6. Demo
+## 5. Demo
 `?demo=showcase` (standalone vite dev only) sends `lib/showcase.ts`: a service map with 4 services in 2 purple groups plus
-a portal, an investigation (log, 2 code nodes, 3 findings), an order-flow row of 5 code nodes and two flows in
-`vsCanvas.flows` (`order` includes a parallel fork).
+a portal, an investigation (log, 2 code nodes, 3 findings), an order-flow row of 5 code nodes.

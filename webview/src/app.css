@@ -111,18 +111,6 @@ div.svelte-flow {
   border-radius: 2px;
 }
 
-/* Flow playback: everything that is not part of the flow steps back (smooth 200ms, restored on stop). */
-.svelte-flow__node,
-.svelte-flow__edge {
-  transition: opacity 200ms ease;
-}
-.wrap.flow-active .svelte-flow__node:not(.participant):not(.group-node) {
-  opacity: 0.55;
-}
-.wrap.flow-active .svelte-flow__edge:not(.participant) {
-  opacity: 0.35;
-}
-
 /* JSON Canvas groups are spatial: the frame is click-through, only the label tab is interactive. */
 .svelte-flow__node.group-node {
   pointer-events: none !important;
@@ -235,9 +223,7 @@ div.svelte-flow {
     animation: none;
   }
   .svelte-flow__handle.h-side,
-  .svelte-flow__handle.h-line,
-  .svelte-flow__node,
-  .svelte-flow__edge {
+  .svelte-flow__handle.h-line {
     transition: none;
   }
 }
@@ -250,7 +236,7 @@ div.svelte-flow {
 }
 
 /* Edge labels keep a readable on-screen size when the canvas is zoomed out (--cv-label-scale set on .wrap). */
-.svelte-flow__edge-label:not(.flow-chip):not(:has(.label-input)):not(:has(.svelte-flow__edge-toolbar)) {
+.svelte-flow__edge-label:not(:has(.label-input)):not(:has(.svelte-flow__edge-toolbar)) {
   font-size: calc(11px * var(--cv-label-scale, 1));
   padding: calc(2px * var(--cv-label-scale, 1)) calc(6px * var(--cv-label-scale, 1));
   border-radius: 4px;

@@ -6,7 +6,7 @@ import { CanvasIndex } from './canvas/index';
 import { CanvasCodeLens, CanvasesTree } from './canvas/views';
 import { addHighlights, addNode, codeSize } from './canvas/model';
 import { loadFile, workspaceRelPath } from './code/files';
-import { installAgentSkills } from './agent/install';
+import { installAgentSkills, refreshInstalledSkills } from './agent/install';
 import { setUpClaudeCode, syncClaudeCodeConfig } from './mcp/claudeCode';
 import { workspacePort } from './mcp/port';
 import { CanvasMcpServer } from './mcp/server';
@@ -24,6 +24,11 @@ export function activate(ctx: vscode.ExtensionContext) {
   const index = new CanvasIndex(docs);
   const defsChanged = new vscode.EventEmitter<void>();
 
+  // The running extension's version, stamped into generated agent guides. Guides installed earlier by "Install Agent
+  // Skills" are refreshed when they are older (never creates files, never prompts).
+  const version = String(ctx.extension.packageJSON.version);
+  void refreshInstalledSkills(version, log);
+
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   status.command = 'vsCanvas.open';
   status.show();
@@ -40,7 +45,7 @@ export function activate(ctx: vscode.ExtensionContext) {
   };
   server.onDidChangeUrl(refresh);
   server.onDidChangeUrl((url) => {
-    if (url) void syncClaudeCodeConfig(url, ctx.workspaceState, log);
+    if (url) void syncClaudeCodeConfig(url, ctx.workspaceState, log, version);
   });
   index.onDidChange(refresh);
 
@@ -108,7 +113,7 @@ export function activate(ctx: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('vsCanvas.mcp.port')) void start();
       if (e.affectsConfiguration('vsCanvas.claudeCode.mcpJson') && server.url) {
-        void syncClaudeCodeConfig(server.url, ctx.workspaceState, log);
+        void syncClaudeCodeConfig(server.url, ctx.workspaceState, log, version);
       }
     }),
     vscode.commands.registerCommand('vsCanvas.newCanvas', newCanvas),
@@ -191,8 +196,8 @@ export function activate(ctx: vscode.ExtensionContext) {
         void vscode.window.showErrorMessage(`VS Canvas: ${errMsg(e)}`);
       }
     }),
-    vscode.commands.registerCommand('vsCanvas.setUpClaudeCode', () => setUpClaudeCode(server.url)),
-    vscode.commands.registerCommand('vsCanvas.installAgentSkills', () => installAgentSkills()),
+    vscode.commands.registerCommand('vsCanvas.setUpClaudeCode', () => setUpClaudeCode(server.url, version)),
+    vscode.commands.registerCommand('vsCanvas.installAgentSkills', () => installAgentSkills(version)),
     vscode.commands.registerCommand('vsCanvas.copyMcpUrl', async () => {
       const url = server.url;
       if (!url) return void vscode.window.showWarningMessage('VS Canvas: MCP server is not running.');

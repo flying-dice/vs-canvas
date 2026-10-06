@@ -83,37 +83,25 @@ describe('semantic variants', () => {
       }],
       edges: [],
       vsCanvas: {
-        version: 1, flows: [{ id: 'flow-1', title: 'F', steps: [{ durationMs: 10, id: 's1', edge: 'e' }] }], pinned: true, kind: 'map', title: 'T',
+        version: 1, pinned: true, kind: 'map', title: 'T',
       },
     };
     const text = serializeCanvas(f);
     expect(parseCanvas(text)).toEqual(f);
     expect(text.indexOf('"title"')).toBeLessThan(text.indexOf('"canvas"'));
     expect(text.indexOf('"entryPoints"')).toBeLessThan(text.indexOf('"tags"'));
-    expect(text).toMatch(/"kind": "map",\s+"pinned": true,\s+"flows"/);
-    expect(text).toMatch(/"id": "s1",\s+"edge": "e",\s+"durationMs": 10/);
+    expect(text).toMatch(/"kind": "map",\s+"pinned": true/);
     expect(text).toContain('"lines": [1, 5]');
   });
 });
 
-describe('flow pruning', () => {
-  it('drops steps that reference removed edges/nodes and empty flows', () => {
-    const f = parseCanvas(JSON.stringify({
-      nodes: [
-        { id: 'a', type: 'text', text: 'a', x: 0, y: 0, width: 100, height: 50 },
-        { id: 'b', type: 'text', text: 'b', x: 200, y: 0, width: 100, height: 50 },
-      ],
-      edges: [{ id: 'e1', fromNode: 'a', toNode: 'b' }],
-      vsCanvas: { version: 1, flows: [
-        { id: 'flow-1', title: 't', steps: [{ id: 's1', edge: 'e1' }, { id: 's2', node: 'a' }] },
-        { id: 'flow-2', title: 'u', steps: [{ id: 's3', edge: 'e1' }] },
-      ] },
-    }));
-    removeEdges(f, ['e1']);
-    expect(f.vsCanvas?.flows?.map((x) => x.id)).toEqual(['flow-1']);
-    expect(f.vsCanvas?.flows?.[0].steps.map((x) => x.id)).toEqual(['s2']);
-    removeNodes(f, ['a']);
-    expect(f.vsCanvas?.flows).toBeUndefined();
+describe('legacy playable flows', () => {
+  it('keeps a stray vsCanvas.flows through parse and serialize (only the lint fix removes it)', () => {
+    const flows = [{ id: 'flow-1', title: 't', steps: [{ id: 's1', edge: 'e1' }] }];
+    const text = JSON.stringify({ nodes: [], edges: [], vsCanvas: { version: 1, title: 'T', flows } });
+    const f = parseCanvas(text);
+    expect(f.vsCanvas).toEqual({ version: 1, title: 'T', flows });
+    expect(JSON.parse(serializeCanvas(f)).vsCanvas.flows).toEqual(flows);
   });
 });
 

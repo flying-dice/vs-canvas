@@ -13,15 +13,11 @@
     info: 'M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zM8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2zM7.5 7h1v4.5h-1zM7.5 4.5h1v1.2h-1z',
     close: 'M8 7.3l3.6-3.6.7.7L8.7 8l3.6 3.6-.7.7L8 8.7l-3.6 3.6-.7-.7L7.3 8 3.7 4.4l.7-.7L8 7.3z',
     warning: 'M8 1.5l7 12.5H1L8 1.5zm0 2.3L3 13h10L8 3.8zM7.5 7h1v3h-1V7zm0 4h1v1h-1v-1z',
-    play: 'M4.5 2.8v10.4L13 8z',
-    pause: 'M4 3h3v10H4zM9 3h3v10H9z',
-    stepBack: 'M3 3h1.5v10H3zM13 3v10L5.5 8z',
-    stepForward: 'M11.5 3H13v10h-1.5zM3 3l7.5 5L3 13z',
     zap: 'M9.2 1.5L3.8 9h3.6l-.6 5.5L12.2 7H8.6z',
     pinFilled: 'M9.6 1.5l4.9 4.9-.9.9-1.2-.4-2.6 2.6.4 2.5-.9.9-2.6-2.6-3.6 3.6-.7-.7 3.6-3.6-2.6-2.6.9-.9 2.5.4 2.6-2.6-.4-1.2z',
   } as const;
 
-  // Stroked 16x16 glyphs (1.25px round strokes), for the finding/log/service/portal kinds, transport and toolbars.
+  // Stroked 16x16 glyphs (1.25px round strokes), for the finding/log/service/portal kinds and toolbars.
   export const STROKE_ICONS = {
     hypothesis: 'M6 12.5h4M6.5 14h3M5 9.2a4 4 0 1 1 6 0c-.6.5-1 1.1-1 1.8H6c0-.7-.4-1.3-1-1.8z',
     evidence: 'M7 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM10 10l3.5 3.5',

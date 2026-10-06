@@ -54,14 +54,12 @@
   import ShapePalette from './ui/organisms/ShapePalette.svelte';
   import { SHAPE_MIME, newShapeById, shapeIdOfKind, shapeKind } from './lib/shapes/create';
   import Breadcrumbs, { type Crumb } from './ui/molecules/Breadcrumbs.svelte';
-  import DataChip from './ui/molecules/DataChip.svelte';
   import type { IconName } from './ui/atoms/Icon.svelte';
   import ConnectionLine from './canvas/ConnectionLine.svelte';
   import DropHighlight from './canvas/DropHighlight.svelte';
   import SelectionChrome from './canvas/SelectionChrome.svelte';
   import TopToolbar from './canvas/TopToolbar.svelte';
   import ZoomControls from './canvas/ZoomControls.svelte';
-  import Playback from './canvas/Playback.svelte';
   import { KIND_DEFAULTS, CODE_SIZE, dirBetween, placeAtEdge, placeCentered, type Dir } from './canvas/kinds';
   import { alignBoxes, distributeBoxes, groupAround, lineAt, lineTop, nearestSide, type Align, type Box } from './canvas/geometry';
   import { lintCanvas, type LintDiagnostic, type LintSeverity } from '../../src/shared/lint';
@@ -122,9 +120,6 @@
   const exitEdges = new Set<string>();
   let flashNodes = new Set<string>();
   let warnEdges = new Set<string>();
-  /** Nodes / edges of the current flow: everything else dims while it plays. */
-  let partNodes = new Set<string>();
-  let partEdges = new Set<string>();
   let issuesOpen = $state(getState<{ issuesOpen: boolean }>().issuesOpen ?? false);
 
   function nodeClass(id: string, kind?: string): string | undefined {
@@ -133,7 +128,6 @@
       enterNodes.has(id) ? 'node-enter' : '',
       exitNodes.has(id) ? 'node-exit' : '',
       flashNodes.has(id) ? 'lint-flash' : '',
-      partNodes.has(id) ? 'participant' : '',
     ].filter(Boolean);
     return c.length ? c.join(' ') : undefined;
   }
@@ -142,7 +136,6 @@
       enterEdges.has(id) ? 'edge-enter' : '',
       exitEdges.has(id) ? 'edge-exit' : '',
       issuesOpen && warnEdges.has(id) ? 'lint-warn' : '',
-      partEdges.has(id) ? 'participant' : '',
     ].filter(Boolean);
     return c.length ? c.join(' ') : undefined;
   }
@@ -398,8 +391,6 @@
       pointerDown || nodeDragging || userMoving || ui.connectFrom !== null || performance.now() - lastWheel < MOTION.wheelQuietMs,
   });
 
-  let playback = $state<Playback>();
-
   function handleMessage(m: ToWebview) {
     if (m.type === 'document') {
       canvasPath = m.canvasPath;
@@ -407,7 +398,6 @@
       applyDocument(m);
     } else if (m.type === 'info') mcpUrl = m.mcpUrl;
     else if (m.type === 'focus') camera.request(m.nodeIds, m.zoom ? { fit: true } : {});
-    else if (m.type === 'playFlow') playback?.play(m.flowId, m.fromStep ?? 0);
     else if (m.type === 'select') selectNodes(m.nodeIds, m.edit);
   }
 
@@ -540,7 +530,9 @@
   const fixLayout = (nodeIds?: string[]) => post({ type: 'fixLayout', ...(nodeIds?.length ? { nodeIds } : {}) });
   function fixIssue(d: LintDiagnostic) {
     const ids = new Set([...d.nodeIds, ...(d.fix?.moves?.map((m) => m.id) ?? [])]);
-    fixLayout([...ids]);
+    // A diagnostic with no nodes (e.g. legacy-flows) must fix only its own rule, not run the whole layout fix.
+    if (!ids.size) post({ type: 'fixLayout', rules: [d.rule] });
+    else fixLayout([...ids]);
   }
 
   // Auto-sized nodes (code, fileRef): report their measured size back into the document.
@@ -626,7 +618,6 @@
   let px = 0;
   let py = 0;
   function onWindowPointerMove(e: PointerEvent) {
-    if (spaceDown && e.buttons & 1) spaceMoved = true;
     if (ui.connectFrom === null) return;
     px = e.clientX;
     py = e.clientY;
@@ -1054,7 +1045,6 @@
         };
       });
   });
-  const cmdFlows = $derived((docState?.vsCanvas?.flows ?? []).map((f) => ({ id: f.id, title: f.title, description: f.description })));
   const cmdCanvases = $derived.by(() => {
     if (!cmdOpen) return [];
     const m = new Map<string, string>();
@@ -1077,8 +1067,7 @@
     if (sel.group === 'node') {
       selectNodes([sel.id]);
       focusIds([sel.id]);
-    } else if (sel.group === 'flow') playback?.play(sel.id, 0);
-    else if (sel.group === 'canvas') post({ type: 'openCanvas', path: sel.id });
+    } else if (sel.group === 'canvas') post({ type: 'openCanvas', path: sel.id });
     else if (sel.id === 'fit') fitAll();
     else if (sel.id === 'zoom100') resetZoom();
     else if (sel.id === 'layout') fixLayout();
@@ -1090,8 +1079,6 @@
   }
 
   // ---- keyboard (canvas focused; never while typing) ----
-  let spaceDown = false;
-  let spaceMoved = false;
   const typing = (t: EventTarget | null) => {
     const el = t as HTMLElement | null;
     return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
@@ -1101,11 +1088,6 @@
     if (typing(e.target) || quick || cmdOpen) return;
     const mod = e.metaKey || e.ctrlKey;
     const k = e.key;
-    if (k === ' ' && !e.repeat && !mod) {
-      spaceDown = true;
-      spaceMoved = false;
-      return;
-    }
     if (mod && k.toLowerCase() === 'd') {
       e.preventDefault();
       if (selectedNodes.length) duplicate(selectedNodes.map((n) => n.id));
@@ -1146,19 +1128,7 @@
         const dx = k === 'ArrowLeft' ? -step : k === 'ArrowRight' ? step : 0;
         const dy = k === 'ArrowUp' ? -step : k === 'ArrowDown' ? step : 0;
         moveBoxes(new Map(selectedNodes.map((n) => [n.id, { x: n.position.x + dx, y: n.position.y + dy }])));
-      } else if (playback?.hasFlows() && (k === 'ArrowLeft' || k === 'ArrowRight')) {
-        e.preventDefault();
-        playback.step(k === 'ArrowLeft' ? -1 : 1);
       }
-    }
-  }
-  function onkeyup(e: KeyboardEvent) {
-    if (e.key !== ' ') return;
-    const was = spaceDown && !spaceMoved;
-    spaceDown = false;
-    // Space alone plays / pauses the flow; Space + drag pans (xyflow).
-    if (was && !typing(e.target) && !(e.target as HTMLElement | null)?.closest?.('button, [role="slider"], select') && playback?.hasFlows()) {
-      playback.toggle();
     }
   }
 
@@ -1174,12 +1144,11 @@
   }
 </script>
 
-<svelte:window {onkeydown} {onkeyup} />
+<svelte:window {onkeydown} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="wrap"
-  class:flow-active={ui.flowActive}
   class:connecting={ui.connectFrom !== null}
   class:moving={userMoving}
   class:palette-open={shapesOpen}
@@ -1290,19 +1259,6 @@
         </div>
       {/each}
       <DropHighlight zoom={viewport.current.zoom} />
-      {#each ui.steps as s (s.stepId)}
-        {#if s.nodeId && s.data}
-          {@const nb = nodes.find((q) => q.id === s.nodeId)}
-          {#if nb}
-            <div
-              class="node-chip"
-              style:transform={`translate(${nb.position.x + (nb.measured?.width ?? nb.width ?? 0) / 2}px, ${nb.position.y - 10}px) translate(-50%, -100%) scale(${badgeScale})`}
-            >
-              <DataChip text={s.data} />
-            </div>
-          {/if}
-        {/if}
-      {/each}
     </ViewportPortal>
     <SelectionChrome
       selected={selectedNodes}
@@ -1313,27 +1269,7 @@
     />
   </SvelteFlow>
 
-  <Playback
-    bind:this={playback}
-    doc={docState}
-    edgeEnds={(id) => {
-      const e = edges.find((q) => q.id === id);
-      return e ? { source: e.source, target: e.target } : undefined;
-    }}
-    lineRange={(id) => {
-      const c = (nodes.find((q) => q.id === id)?.data as FlowData | undefined)?.code;
-      return c && !c.error && c.lines.length ? [c.firstLine, c.firstLine + c.lines.length - 1] : undefined;
-    }}
-    hasNode={(id) => nodes.some((q) => q.id === id && !exitNodes.has(id))}
-    onfocus={(ids) => camera.request(ids, { immediate: true, readableZoom: MOTION.playbackZoom })}
-    onparticipants={(n, e) => {
-      partNodes = n;
-      partEdges = e;
-      restyle();
-    }}
-  />
-
-  <CommandBar bind:open={cmdOpen} nodes={cmdNodes} flows={cmdFlows} canvases={cmdCanvases} actions={cmdActions} onselect={onCommand} />
+  <CommandBar bind:open={cmdOpen} nodes={cmdNodes} canvases={cmdCanvases} actions={cmdActions} onselect={onCommand} />
 
   {#if shapesOpen}
     <ShapePalette onadd={addShapeAtCenter} onclose={toggleShapes} />
@@ -1370,13 +1306,5 @@
     transform-origin: 0 0;
     pointer-events: auto;
     z-index: 5;
-  }
-  .node-chip {
-    position: absolute;
-    left: 0;
-    top: 0;
-    transform-origin: 50% 100%;
-    pointer-events: none;
-    z-index: 6;
   }
 </style>

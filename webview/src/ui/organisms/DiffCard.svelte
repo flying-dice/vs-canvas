@@ -18,7 +18,6 @@
     leftTokens = null,
     rightTokens = null,
     selected = false,
-    lit = false,
     lod = 'near',
     context = 3,
     onlineclick,
@@ -34,8 +33,6 @@
     leftTokens?: Token[][] | null;
     rightTokens?: Token[][] | null;
     selected?: boolean;
-    /** Flow playback: this node is the current step's target. */
-    lit?: boolean;
     /** `far`: header and big +N / -M only. `mid` and `near` show the folded diff. */
     lod?: Lod;
     /** Unchanged lines kept around each change. */
@@ -92,7 +89,7 @@
   </div>
 {/snippet}
 
-<div class="card" class:selected class:lit class:far={lod === 'far'}>
+<div class="card" class:selected class:far={lod === 'far'}>
   <div class="head node-drag-handle">
     <span class="glyph"><Icon name="diff" /></span>
     <span class="title" title={`${leftPath} → ${rightPath}`}>{heading}</span>
@@ -151,11 +148,6 @@
   .card.selected {
     border-color: var(--vscode-focusBorder, #007fd4);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--vscode-focusBorder, #007fd4) 35%, transparent);
-  }
-  /* Flow playback emphasis, same cyan as CodeLine's active line. */
-  .card.lit {
-    border-color: var(--vscode-terminal-ansiCyan, #29b8db);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--vscode-terminal-ansiCyan, #29b8db) 45%, transparent);
   }
   .card > :not(:global(.far)) {
     transition: opacity 180ms ease;
