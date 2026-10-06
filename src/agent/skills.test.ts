@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { HARNESSES, SECTION_END, SECTION_START, demoteHeadings, harnessById, renderInstall, upsertSection } from './skills';
+import { HARNESSES, SECTION_END, SECTION_START, demoteHeadings, harnessById, renderInstall, renderRefresh, upsertSection, GENERATED } from './skills';
 
 const body = readFileSync(new URL('../../agent/skill.md', import.meta.url), 'utf8');
 
@@ -51,5 +51,31 @@ describe('shared-file sections', () => {
     const h = harnessById('cursor')!;
     expect(renderInstall(h, body, h.render(body))).toBeUndefined();
     expect(renderInstall(h, body, 'stale')).toBe(h.render(body));
+  });
+});
+
+describe('renderRefresh', () => {
+  const file = harnessById('cursor')!;
+  const sect = harnessById('agents-md')!;
+
+  it('leaves missing and unmanaged files alone', () => {
+    expect(renderRefresh(file, body, undefined)).toBeUndefined();
+    expect(renderRefresh(sect, body, undefined)).toBeUndefined();
+    expect(renderRefresh(file, body, 'my own rules\n')).toBeUndefined();
+    expect(renderRefresh(sect, body, '# My AGENTS.md\n')).toBeUndefined();
+  });
+
+  it('updates a managed whole file and a managed section', () => {
+    expect(renderRefresh(file, body, `${GENERATED}\nold canvas_play_flow`)).toBe(file.render(body));
+    const stale = `# Rules\n\n${SECTION_START}\nold\n${SECTION_END}\n\n## Later\nkeep\n`;
+    const out = renderRefresh(sect, body, stale)!;
+    expect(out).toContain('## Later\nkeep');
+    expect(out).not.toContain('\nold\n');
+    expect(out).toContain(SECTION_START);
+  });
+
+  it('reports no change when already current', () => {
+    expect(renderRefresh(file, body, file.render(body))).toBeUndefined();
+    expect(renderRefresh(sect, body, sect.render(body))).toBeUndefined();
   });
 });

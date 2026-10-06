@@ -145,11 +145,6 @@ export function parseCanvas(text: string, label = 'canvas file'): CanvasFile {
   const { canvasIde: legacyMeta, ...rest } = raw as Record<string, unknown>;
   const out = { ...rest, nodes, edges } as CanvasFile;
   if (!out.vsCanvas && isObj(legacyMeta)) out.vsCanvas = legacyMeta as CanvasFile['vsCanvas'];
-  // Playable flows were removed; drop the stray key from old files so it is never written back.
-  if (isObj(out.vsCanvas) && 'flows' in out.vsCanvas) {
-    const { flows: _flows, ...meta } = out.vsCanvas as Record<string, unknown>;
-    out.vsCanvas = meta as CanvasFile['vsCanvas'];
-  }
   return out;
 }
 
@@ -217,7 +212,6 @@ export function serializeCanvas(file: CanvasFile): string {
   out.edges = edges;
   if (file.vsCanvas) {
     const meta = ordered(file.vsCanvas as Record<string, unknown>, META_KEYS);
-    delete meta.flows; // legacy playable flows are never written
     out.vsCanvas = meta;
   }
   for (const [k, v] of Object.entries(file)) if (!(k in out) && v !== undefined) out[k] = v;

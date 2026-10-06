@@ -55,8 +55,8 @@ Timings are targets. Captions are sentence case, at most 7 words, bottom-left, i
 - **Prompt:** `Show how an order flows from the pay button to the ledger.`
 - **Shot:** the agent opens 5 code nodes (`CheckoutButton.tsx` → `api/orders.ts` → `payments/charge.ts` →
   `payments/retry.ts` → `ledger/write.ts`) and connects them on the exact call-site lines.
-- **Motion (the hero moment):** the edges draw in one after another, each target line highlighting as its
-  edge lands. Each edge carries a label with the payload changing shape:
+- **Motion (the hero moment):** the agent connects each call site one after another, then highlights the key
+  line in each hop (`canvas_highlight_lines`). Each edge carries a label with the payload changing shape:
   `{ cartId }` → `Order{ id: 812, total: 49.00 }` → `Charge{ status: 'pending' }` → `LedgerEntry{ … }`
 - **Beat:** `retry.ts` calls the ledger from two places. The two edges visually explain the bug from use
   case 2. Hold for 1s.

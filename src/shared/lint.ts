@@ -35,7 +35,8 @@ export type LintRuleId =
   | 'duplicate-edge'
   | 'empty-group'
   | 'missing-file' // file node's path (or a diff node's diffFrom) does not exist (needs LintOptions.fileInfo)
-  | 'diff-missing-base'; // diff node without a diffFrom (left-hand file)
+  | 'diff-missing-base' // diff node without a diffFrom (left-hand file)
+  | 'legacy-flows'; // vsCanvas.flows from the removed flow playback feature (rejected by the schema)
 
 export type LintMove = { id: string; x: number; y: number; width?: number; height?: number };
 
@@ -44,6 +45,8 @@ export type LintFix = {
   moves?: LintMove[];
   removeEdges?: string[];
   removeNodes?: string[];
+  /** Keys to delete from the `vsCanvas` metadata object (touches no node or edge). */
+  removeMeta?: string[];
   /** Complete new order of the node ids in the `nodes` array (used to put groups behind their members). */
   reorder?: string[];
 };
@@ -76,7 +79,7 @@ export const LINT_RULES: readonly LintRuleId[] = [
   'node-overlap', 'node-crowded', 'group-straddle', 'group-label-covered', 'edge-through-node', 'edge-label-overlap',
   'edge-crossing', 'edge-backwards', 'text-overflow', 'far-outlier', 'group-order', 'duplicate-id', 'dangling-edge',
   'invalid-anchor', 'highlight-out-of-range', 'self-loop', 'duplicate-edge', 'empty-group', 'missing-file', 'unknown-shape',
-  'diff-missing-base',
+  'diff-missing-base', 'legacy-flows',
 ];
 
 export const DEFAULT_SEVERITY: Record<LintRuleId, LintSeverity> = {
@@ -101,13 +104,15 @@ export const DEFAULT_SEVERITY: Record<LintRuleId, LintSeverity> = {
   'missing-file': 'error',
   'unknown-shape': 'error',
   'diff-missing-base': 'error',
+  'legacy-flows': 'error',
 };
 
 export const LINT_DEFAULTS = { minGap: 24, maxCrossings: 4, outlierDistance: 2000, outlierGap: 80 } as const;
 
-/** Rules whose fixes fixCanvas applies without asking (they only move / resize / reorder). */
+/** Rules whose fixes fixCanvas applies without asking (they only move / resize / reorder / drop a dead metadata key). */
 export const AUTO_FIX_RULES: ReadonlySet<LintRuleId> = new Set<LintRuleId>([
   'group-order', 'text-overflow', 'group-straddle', 'group-label-covered', 'node-overlap', 'node-crowded', 'far-outlier',
+  'legacy-flows',
 ]);
 /** Rules whose fixes delete edges; fixCanvas applies them only with `destructive: true`. */
 export const DESTRUCTIVE_FIX_RULES: ReadonlySet<LintRuleId> = new Set<LintRuleId>(['dangling-edge', 'duplicate-edge', 'self-loop']);
@@ -115,7 +120,7 @@ export const DESTRUCTIVE_FIX_RULES: ReadonlySet<LintRuleId> = new Set<LintRuleId
 // Fix order within a pass: cheap structural repairs first, then things that resize, then things that move.
 const FIX_PRIORITY: LintRuleId[] = [
   'dangling-edge', 'self-loop', 'duplicate-edge', 'group-order', 'text-overflow', 'group-straddle', 'group-label-covered',
-  'node-overlap', 'node-crowded', 'far-outlier',
+  'node-overlap', 'node-crowded', 'far-outlier', 'legacy-flows',
 ];
 
 // ---------- text height estimate ----------
@@ -218,6 +223,7 @@ export function estimateShapeHeight(n: Pick<TextNode, 'text' | 'fields' | 'shape
 // ---------- context ----------
 
 type Ctx = {
+  canvas: CanvasFile;
   nodes: CanvasFileNode[];
   edges: CanvasFileEdge[];
   byId: Map<string, CanvasFileNode>;
@@ -231,6 +237,7 @@ function makeCtx(canvas: CanvasFile, opts: LintOptions): Ctx {
   const byId = new Map<string, CanvasFileNode>();
   for (const n of canvas.nodes) if (!byId.has(n.id)) byId.set(n.id, n);
   return {
+    canvas,
     nodes: canvas.nodes,
     edges: canvas.edges,
     byId,
@@ -375,6 +382,17 @@ function outlierFix(c: Ctx, n: CanvasFileNode, others: CanvasFileNode[]): LintFi
   const f = findFree(start, blockersFor(c, n), c.minGap, new Set<string>());
   if (!f) return undefined;
   return { description: `Move ${fmt(n)} next to ${fmt(target)}`, moves: [move(n, f)] };
+}
+
+// ---------- metadata ----------
+
+function metaRules(c: Ctx): LintDiagnostic[] {
+  const meta = c.canvas.vsCanvas as Record<string, unknown> | undefined;
+  if (!meta || typeof meta !== 'object' || !('flows' in meta)) return [];
+  const d = mk(c, 'legacy-flows',
+    'vsCanvas.flows is from the removed flow playback feature and is no longer supported; remove it.', [], [],
+    { description: 'Remove vsCanvas.flows', removeMeta: ['flows'] });
+  return d ? [d] : [];
 }
 
 // ---------- node-level detection (cheap; also drives fixCanvas) ----------
@@ -653,7 +671,7 @@ function edgeRules(c: Ctx): LintDiagnostic[] {
 
 export function lintCanvas(canvas: CanvasFile, opts: LintOptions = {}): LintDiagnostic[] {
   const c = makeCtx(canvas, opts);
-  return [...structural(c), ...nodeRules(c), ...edgeRules(c)];
+  return [...structural(c), ...metaRules(c), ...nodeRules(c), ...edgeRules(c)];
 }
 
 const finite = (n: number | undefined, d: number) => (n !== undefined && Number.isFinite(n) ? Math.round(n) : d);
@@ -677,6 +695,10 @@ function applyInPlace(work: CanvasFile, fix: LintFix): void {
     const s = new Set(fix.removeNodes);
     work.nodes = work.nodes.filter((n) => !s.has(n.id));
     work.edges = work.edges.filter((e) => !s.has(e.fromNode) && !s.has(e.toNode));
+  }
+  if (fix.removeMeta?.length && work.vsCanvas) {
+    const meta = work.vsCanvas as Record<string, unknown>;
+    for (const k of fix.removeMeta) delete meta[k];
   }
   if (fix.reorder) {
     const pool = [...work.nodes];
@@ -717,9 +739,10 @@ export function fixCanvas(
     let progressed = false;
     for (let guard = 0; guard < work.nodes.length * 4 + work.edges.length + 20; guard++) {
       const c = makeCtx(work, opts);
-      const diags = [...(opts.destructive ? structural(c) : []), ...nodeRules(c)];
+      const diags = [...(opts.destructive ? structural(c) : []), ...metaRules(c), ...nodeRules(c)];
       const idsOf = (f: LintFix) => [
         ...(f.moves ?? []).map((m) => m.id), ...(f.removeEdges ?? []), ...(f.removeNodes ?? []),
+        ...(f.removeMeta ?? []).map((k) => `meta:${k}`),
         ...(f.reorder ? [`reorder:${diagKey(f)}`] : []),
       ];
       const next = diags

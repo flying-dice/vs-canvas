@@ -95,17 +95,13 @@ describe('semantic variants', () => {
   });
 });
 
-describe('removed playable flows', () => {
-  it('drops a stray vsCanvas.flows on parse and never serializes it', () => {
-    const text = JSON.stringify({
-      nodes: [], edges: [],
-      vsCanvas: { version: 1, title: 'T', flows: [{ id: 'flow-1', title: 't', steps: [{ id: 's1', edge: 'e1' }] }] },
-    });
+describe('legacy playable flows', () => {
+  it('keeps a stray vsCanvas.flows through parse and serialize (only the lint fix removes it)', () => {
+    const flows = [{ id: 'flow-1', title: 't', steps: [{ id: 's1', edge: 'e1' }] }];
+    const text = JSON.stringify({ nodes: [], edges: [], vsCanvas: { version: 1, title: 'T', flows } });
     const f = parseCanvas(text);
-    expect(f.vsCanvas).toEqual({ version: 1, title: 'T' });
-    expect(serializeCanvas(f)).not.toContain('flows');
-    const raw = { nodes: [], edges: [], vsCanvas: { version: 1, flows: [] } } as unknown as Parameters<typeof serializeCanvas>[0];
-    expect(serializeCanvas(raw)).not.toContain('flows');
+    expect(f.vsCanvas).toEqual({ version: 1, title: 'T', flows });
+    expect(JSON.parse(serializeCanvas(f)).vsCanvas.flows).toEqual(flows);
   });
 });
 

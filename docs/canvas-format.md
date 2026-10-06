@@ -74,7 +74,7 @@ Diagram shapes come in six libraries; the full registry (ids, sizes, fields, rel
 - **Text must fit**: ~7.5px per character wrapping at `width - 24`, 20px per line, 24px padding (`text-overflow`); grow `height`. Shapes use a per-layout estimate (see Shapes).
 - **Edges should not cross other nodes** (`edge-through-node`; orthogonal edges are checked along their right-angle path), labels should not cover nodes (`edge-label-overlap`), and crossings should be few (`edge-crossing`, more than 4 reported).
 - **No far-flung nodes** (`far-outlier`, > 2000px from anything).
-- Structural: `unknown-shape`, unique ids, no dangling / self-loop / duplicate edges, valid anchors and highlight ranges, existing files (including a diff node's `diffFrom`; `diff-missing-base` flags a diff node without one).
+- Structural: `unknown-shape`, unique ids, no dangling / self-loop / duplicate edges, valid anchors and highlight ranges, existing files (including a diff node's `diffFrom`; `diff-missing-base` flags a diff node without one), and no `vsCanvas.flows` (`legacy-flows`, left over from the removed flow playback feature; `canvas-lint --fix` removes it).
 
 ## Tools
 

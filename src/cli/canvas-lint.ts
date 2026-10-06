@@ -10,7 +10,7 @@ const USAGE = `Usage: canvas-lint [globs...] [--fix] [--destructive] [--format t
 
 Lints JSON Canvas (*.canvas.json) files for layout mistakes and broken references.
   globs          files, directories or globs (default: **/*.canvas.json, skipping node_modules, dist, .git)
-  --fix          apply automatic fixes (moves/resizes/reorders) and write the files
+  --fix          apply automatic fixes (moves/resizes/reorders, removing the legacy vsCanvas.flows key) and write the files
   --destructive  with --fix, also remove dangling, duplicate and self-loop edges
   --format       text (default) or json
   --root dir     workspace root: file paths in canvases are relative to it (default: cwd)

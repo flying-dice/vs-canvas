@@ -329,3 +329,31 @@ describe('semantic variants', () => {
     expect(d.filter((x) => x.rule === 'text-overflow')).toEqual([]);
   });
 });
+
+describe('legacy-flows', () => {
+  const withFlows = (): CanvasFile =>
+    ({ nodes: [note('a', 0, 0)], edges: [], vsCanvas: { version: 1, title: 'T', flows: [] } }) as unknown as CanvasFile;
+
+  it('reports one error for a vsCanvas.flows key and nothing without it', () => {
+    const ds = lintCanvas(withFlows()).filter((d) => d.rule === 'legacy-flows');
+    expect(ds).toHaveLength(1);
+    expect(ds[0].severity).toBe('error');
+    expect(ds[0].fix?.removeMeta).toEqual(['flows']);
+    expect(has(cf([note('a', 0, 0)]), 'legacy-flows')).toBe(false);
+    expect(has({ ...cf([note('a', 0, 0)]), vsCanvas: { version: 1 } }, 'legacy-flows')).toBe(false);
+  });
+
+  it('fixCanvas removes the key without touching nodes and the result re-lints clean', () => {
+    const input = withFlows();
+    const { canvas, applied, remaining } = fixCanvas(input);
+    expect(applied.map((d) => d.rule)).toEqual(['legacy-flows']);
+    expect(canvas.vsCanvas).toEqual({ version: 1, title: 'T' });
+    expect(canvas.nodes).toEqual(input.nodes);
+    expect(remaining.some((d) => d.rule === 'legacy-flows')).toBe(false);
+    expect(input.vsCanvas).toHaveProperty('flows'); // input not mutated
+  });
+
+  it('can be switched off', () => {
+    expect(has(withFlows(), 'legacy-flows', { rules: { 'legacy-flows': 'off' } })).toBe(false);
+  });
+});

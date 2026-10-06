@@ -1,7 +1,7 @@
 import * as os from 'node:os';
 import * as vscode from 'vscode';
 import guide from '../../agent/skill.md';
-import { HARNESSES, renderInstall, type Harness, type HarnessId } from './skills';
+import { HARNESSES, renderInstall, renderRefresh, type Harness, type HarnessId } from './skills';
 
 // "VS Canvas: Install Agent Skills": writes the canvas guide for the agent harnesses the user picks.
 
@@ -34,6 +34,24 @@ export async function installSkill(h: Harness): Promise<{ uri: vscode.Uri; chang
   const next = renderInstall(h, guide, await readText(uri));
   if (next !== undefined) await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(next));
   return { uri, changed: next !== undefined };
+}
+
+/**
+ * Rewrites guides installed earlier by "Install Agent Skills" so they follow the current guide. Only files VS Canvas
+ * already manages are touched; nothing is created and the user is never prompted.
+ */
+export async function refreshInstalledSkills(): Promise<void> {
+  for (const h of HARNESSES) {
+    try {
+      const root = rootOf(h);
+      if (!root) continue;
+      const uri = vscode.Uri.joinPath(root, ...h.path.split('/'));
+      const next = renderRefresh(h, guide, await readText(uri));
+      if (next !== undefined) await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(next));
+    } catch {
+      // best effort
+    }
+  }
 }
 
 /** Harnesses that look in use here (their config exists), plus Claude Code for the project by default. */

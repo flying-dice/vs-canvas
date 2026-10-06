@@ -223,9 +223,7 @@ div.svelte-flow {
     animation: none;
   }
   .svelte-flow__handle.h-side,
-  .svelte-flow__handle.h-line,
-  .svelte-flow__node,
-  .svelte-flow__edge {
+  .svelte-flow__handle.h-line {
     transition: none;
   }
 }
