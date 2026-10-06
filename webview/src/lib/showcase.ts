@@ -192,29 +192,6 @@ const canvas: CanvasFile = {
     title: 'acme-shop',
     kind: 'map',
     pinned: true,
-    flows: [
-      {
-        id: 'order',
-        title: 'Order to ledger',
-        description: 'What happens after the shopper clicks pay.',
-        steps: [
-          { id: 's1', edge: 'fe1', caption: 'Shopper clicks pay', data: '{ cartId }', lines: [14, 14] },
-          { id: 's2', edge: 'fe2', caption: 'The API creates the order', data: 'Order{ id: 812, total: 49.00 }', lines: [57, 57] },
-          { id: 's3', edge: 'fe3', caption: 'The card is charged', data: "Charge{ status: 'pending' }", lines: [31, 31] },
-          { id: 's4', edge: 'fe4', caption: 'The gateway times out, the retry fires', data: "Charge{ attempt: 1 }", lines: [48, 48], durationMs: 1400 },
-          { id: 's5', edge: 'fe5', parallel: true, data: "Charge{ attempt: 2 }", durationMs: 1400 },
-          { id: 's6', node: 'fl-ledger', caption: 'The ledger is written twice', data: 'LedgerEntry{ … } × 2', lines: [8, 9], durationMs: 1600 },
-        ],
-      },
-      {
-        id: 'refund',
-        title: 'Refund',
-        steps: [
-          { id: 'r1', edge: 'fe3', caption: 'A refund reuses the charge path', data: 'Refund{ chargeId }' },
-          { id: 'r2', node: 'fl-retry', caption: 'It is retried the same way', data: 'Refund{ attempt: 2 }' },
-        ],
-      },
-    ],
   },
 };
 

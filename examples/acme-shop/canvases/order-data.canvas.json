@@ -14,18 +14,6 @@
   "vsCanvas": {
     "version": 1,
     "title": "Order data over time",
-    "kind": "flow",
-    "flows": [
-      {
-        "id": "flow-1",
-        "title": "Order 812 from cart to paid",
-        "steps": [
-          { "id": "step-1", "node": "code-1", "lines": [20, 29], "caption": "placeOrder saves the order with status placed" },
-          { "id": "step-2", "node": "diff-1", "caption": "id, status and placedAt are added", "data": "Order{ id: 812, status: placed }" },
-          { "id": "step-3", "node": "code-2", "lines": [41, 49], "caption": "chargeOrder records the charge against the order" },
-          { "id": "step-4", "node": "diff-2", "caption": "status becomes paid and payment details are attached", "data": "Order{ id: 812, status: paid, payment.chargeId: chg_k3v9x2ab }" }
-        ]
-      }
-    ]
+    "kind": "flow"
   }
 }

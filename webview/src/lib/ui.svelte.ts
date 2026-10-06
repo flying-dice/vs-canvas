@@ -1,8 +1,6 @@
 // Small shared reactive state between Canvas.svelte and the node / edge adapters. Kept out of node `data` so a
-// pointer move or a playback frame never rebuilds the node array.
-import type { ActiveStep } from './playback';
+// pointer move or a drag frame never rebuilds the node array.
 
-export type LineRange = readonly [number, number];
 /** Node under a connection drag (drop target feedback), in flow coordinates. */
 export type DropTarget = {
   id: string;
@@ -15,7 +13,6 @@ export type DropTarget = {
   /** Where the arrow will land. */
   snap: { x: number; y: number; side: 'left' | 'right' | 'top' | 'bottom' };
 };
-const NONE: readonly ActiveStep[] = [];
 
 class UiState {
   /** Node id asked to enter inline edit mode (consumed by the adapter). */
@@ -24,12 +21,6 @@ class UiState {
   hoverNodeId = $state<string | null>(null);
   /** Node a connection is being dragged from (its line handles stay mounted). */
   connectFrom = $state<string | null>(null);
-  /** Flow playback: the steps of the current group, per frame. */
-  steps = $state.raw<readonly ActiveStep[]>(NONE);
-  /** True while a flow is playing or parked mid-way (drives dimming of non-participants). */
-  flowActive = $state(false);
-  /** Lit lines per node id (flow playback target lines). */
-  activeLines = $state.raw<ReadonlyMap<string, readonly LineRange[]>>(new Map());
 
   /** The one selected edge that shows its toolbar (null with a multi-selection). */
   toolEdge = $state<string | null>(null);

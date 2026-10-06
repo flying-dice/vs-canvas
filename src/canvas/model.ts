@@ -145,6 +145,11 @@ export function parseCanvas(text: string, label = 'canvas file'): CanvasFile {
   const { canvasIde: legacyMeta, ...rest } = raw as Record<string, unknown>;
   const out = { ...rest, nodes, edges } as CanvasFile;
   if (!out.vsCanvas && isObj(legacyMeta)) out.vsCanvas = legacyMeta as CanvasFile['vsCanvas'];
+  // Playable flows were removed; drop the stray key from old files so it is never written back.
+  if (isObj(out.vsCanvas) && 'flows' in out.vsCanvas) {
+    const { flows: _flows, ...meta } = out.vsCanvas as Record<string, unknown>;
+    out.vsCanvas = meta as CanvasFile['vsCanvas'];
+  }
   return out;
 }
 
@@ -160,10 +165,8 @@ const EDGE_KEYS = [
   'relation', 'fromMarker', 'toMarker', 'lineStyle', 'routing',
 ];
 const HL_KEYS = ['id', 'start', 'end', 'color', 'label'];
-const META_KEYS = ['version', 'title', 'description', 'kind', 'pinned', 'flows'];
+const META_KEYS = ['version', 'title', 'description', 'kind', 'pinned'];
 const ENTRY_KEYS = ['file', 'lines', 'label'];
-const FLOW_KEYS = ['id', 'title', 'description', 'steps'];
-const STEP_KEYS = ['id', 'edge', 'node', 'lines', 'caption', 'data', 'parallel', 'durationMs'];
 const ROUNDED = new Set(['x', 'y', 'width', 'height']);
 
 function ordered(obj: Record<string, unknown>, keys: string[], round = false): Record<string, unknown> {
@@ -214,13 +217,7 @@ export function serializeCanvas(file: CanvasFile): string {
   out.edges = edges;
   if (file.vsCanvas) {
     const meta = ordered(file.vsCanvas as Record<string, unknown>, META_KEYS);
-    if (Array.isArray(meta.flows)) {
-      meta.flows = meta.flows.map((f) => {
-        const o = ordered(f as Record<string, unknown>, FLOW_KEYS);
-        if (Array.isArray(o.steps)) o.steps = o.steps.map((st) => ordered(st as Record<string, unknown>, STEP_KEYS));
-        return o;
-      });
-    }
+    delete meta.flows; // legacy playable flows are never written
     out.vsCanvas = meta;
   }
   for (const [k, v] of Object.entries(file)) if (!(k in out) && v !== undefined) out[k] = v;
@@ -381,25 +378,13 @@ export function removeNodes(file: CanvasFile, ids: string[]): { nodes: string[];
   const es = new Set(edges);
   file.nodes = file.nodes.filter((n) => !gone.has(n.id));
   file.edges = file.edges.filter((e) => !es.has(e.id));
-  pruneFlows(file, gone, es);
   return { nodes, edges };
-}
-
-/** Drop flow steps that point at removed nodes/edges, and flows left without steps. */
-function pruneFlows(file: CanvasFile, nodes: Set<string>, edges: Set<string>) {
-  const meta = file.vsCanvas;
-  if (!meta?.flows?.length) return;
-  meta.flows = meta.flows
-    .map((f) => ({ ...f, steps: f.steps.filter((st) => !(st.edge && edges.has(st.edge)) && !(st.node && nodes.has(st.node))) }))
-    .filter((f) => f.steps.length);
-  if (!meta.flows.length) delete meta.flows;
 }
 
 export function removeEdges(file: CanvasFile, ids: string[]): string[] {
   const s = new Set(ids);
   const removed = file.edges.filter((e) => s.has(e.id)).map((e) => e.id);
   file.edges = file.edges.filter((e) => !s.has(e.id));
-  pruneFlows(file, new Set(), new Set(removed));
   return removed;
 }
 

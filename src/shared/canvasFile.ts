@@ -103,7 +103,7 @@ export type LineHighlight = {
  * - display 'diff': a diff card comparing two workspace files, `diffFrom` (left / before) against `file`
  *   (right / after). Whole files are compared line by line; `lines` and `highlights` are ignored. Other JSON Canvas
  *   tools see a plain file node for the right-hand file. Chain diff nodes (a.json -> b.json, b.json -> c.json) to
- *   show data changing along a flow or timeline.
+ *   show data changing step by step.
  * A file node whose `file` ends in `.canvas.json` renders as a portal: a live thumbnail of that canvas that
  * opens it (drill-down from maps). `display` is ignored for portals.
  */
@@ -184,25 +184,6 @@ export type EdgeMarker =
   | 'crow-one-many' // ERD: one or many |<
   | 'crow-zero-many'; // ERD: zero or many o<
 
-/**
- * One step of a flow. A packet travels `edge` (or appears at `node`), the target `lines` light up, the camera
- * follows and `data` is shown in a chip next to the packet (the payload at that point, e.g. "Order{ id: 812 }").
- * `parallel: true` starts the step together with the previous one (e.g. a fork where the packet splits).
- */
-export type FlowStep = {
-  id: string;
-  edge?: string;
-  node?: string;
-  lines?: [start: number, end: number];
-  caption?: string;
-  data?: string;
-  parallel?: boolean;
-  /** Travel/dwell time in ms (default 1200). */
-  durationMs?: number;
-};
-
-export type Flow = { id: string; title: string; description?: string; steps: FlowStep[] };
-
 export type CanvasMeta = {
   version: 1;
   title?: string;
@@ -211,7 +192,6 @@ export type CanvasMeta = {
   kind?: 'map' | 'investigation' | 'flow' | 'notes';
   /** Pinned canvases are listed first in the sidebar and open with "Canvas: Open Pinned Map". */
   pinned?: boolean;
-  flows?: Flow[];
 };
 
 export type CanvasFile = {

@@ -14,7 +14,7 @@ import { loadFile, openDoc, workspaceRelPath } from '../code/files';
 import { callHierarchy, definition, listSymbols, WARMUP_NOTE } from '../code/intel';
 import { planTrace } from '../code/trace';
 import {
-  COLOR_PRESETS, SEMANTIC_COLORS, type Side, type CanvasFile, type CanvasFileNode, type CanvasMeta, type EntryPoint, type FlowStep,
+  COLOR_PRESETS, SEMANTIC_COLORS, type Side, type CanvasFile, type CanvasFileNode, type CanvasMeta, type EntryPoint,
 } from '../shared/canvasFile';
 import { estimateShapeHeight, estimateTextHeight, fixCanvas, lintCanvas, type LintDiagnostic } from '../shared/lint';
 import type { CanvasFileEdge, EdgeMarker } from '../shared/canvasFile';
@@ -217,9 +217,9 @@ const PLAYBOOKS =
   'canvas_connect the services (label what flows between them), canvas_add_portal / service.canvas to drill down into deeper canvases (one canvas per domain), then canvas_pin. ' +
   '(2) Investigate a bug: canvas_create kind "investigation"; canvas_add_log with the stack trace (errorLines = the failing frame lines); canvas_open_file the failing frames and canvas_trace around them; ' +
   'canvas_add_finding for each hypothesis/evidence with status (open, investigating, confirmed, ruled-out) and update statuses as you learn; highlight the root-cause line in red ("failure") with a label. ' +
-  '(3) Explain a data flow: canvas_create kind "flow"; canvas_open_file each hop (or canvas_trace), canvas_connect call sites with line-anchored edges, canvas_add_flow with a `data` payload per step ' +
-  '(e.g. "Order{ id: 812, total: 49.00 }"), then canvas_play_flow. ' +
-  '(4) Show data changing: canvas_add_diff left=order.0.json right=order.1.json under the code that made the change (attachTo the code node), then chain the next diff (order.1.json -> order.2.json) beside it; canvas_add_flow steps with `node` set to each diff node (and its code node) replay the timeline. ' + COLOR_VOCAB;
+  '(3) Explain a data flow: canvas_create kind "flow"; canvas_open_file each hop (or canvas_trace), canvas_connect call sites with line-anchored edges in call order, labelling each edge with the payload that crosses it ' +
+  '(e.g. "Order{ id: 812, total: 49.00 }"), canvas_highlight_lines on the lines that transform the data, then a canvas_add_note summarising the path. ' +
+  '(4) Show data changing: canvas_add_diff left=order.0.json right=order.1.json under the code that made the change (attachTo the code node), then chain the next diff (order.1.json -> order.2.json) beside it, so how the data evolves reads left to right. ' + COLOR_VOCAB;
 
 export function registerTools(server: McpServer, docs: CanvasDocuments, editor: CanvasEditorProvider) {
   const ok = (result: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] });
@@ -341,7 +341,6 @@ export function registerTools(server: McpServer, docs: CanvasDocuments, editor: 
             const f = await docs.read(uri);
             return {
               path, title: f.vsCanvas?.title, description: f.vsCanvas?.description, kind: f.vsCanvas?.kind, pinned: f.vsCanvas?.pinned,
-              flows: f.vsCanvas?.flows?.map((x) => ({ id: x.id, title: x.title, steps: x.steps.length })),
               nodes: f.nodes.length, edges: f.edges.length, active: uri.toString() === active?.toString(),
             };
           } catch (e) {
@@ -449,7 +448,7 @@ export function registerTools(server: McpServer, docs: CanvasDocuments, editor: 
     'canvas_add_diff',
     'Add diff',
     'Add a diff card comparing two workspace files: `left` (before) against `right` (after), whole files, line by line. Use it to show data or config changing, e.g. order.0.json -> order.1.json. ' +
-      'Chaining diffs (a->b, then b->c) beneath the code that produced each change shows data evolving over a timeline (a data layer under the business logic); canvas_add_flow steps can then visit each diff with `node`. ' +
+      'Chaining diffs (a->b, then b->c) beneath the code that produced each change shows data evolving step by step (a data layer under the business logic). ' +
       'The card stays live: edits to either file refresh it. Diff nodes have no lines, so edges cannot anchor to a line.',
     {
       ...canvasArg,
@@ -1084,7 +1083,6 @@ export function registerTools(server: McpServer, docs: CanvasDocuments, editor: 
         description: f.vsCanvas?.description,
         kind: f.vsCanvas?.kind,
         pinned: f.vsCanvas?.pinned,
-        flows: f.vsCanvas?.flows?.map((x) => ({ id: x.id, title: x.title, steps: x.steps.length })),
         nodes: f.nodes.map((n) => {
           const base = { id: n.id, type: n.type, x: n.x, y: n.y, width: n.width, height: n.height, color: fromPreset(n.color) };
           switch (n.type) {
@@ -1235,113 +1233,6 @@ export function registerTools(server: McpServer, docs: CanvasDocuments, editor: 
       if (!(await docs.exists(u))) throw new Error(`Canvas not found: ${a.target}. Use canvas_list or canvas_create.`);
       const file = docs.relPath(u);
       return mutate(a, (cf, totals) => addWithAttach(cf, totals, { type: 'file', file }, a));
-    },
-  );
-
-  // ---------- flows ----------
-
-  tool(
-    'canvas_add_flow',
-    'Add flow',
-    'Define a playable flow over the canvas: a packet travels the steps in order, target lines light up, the camera follows and a data chip shows the payload at each hop. ' +
-      'Each step is EITHER an existing edge (`edge`), OR `from`+`to` node ids (reuses an existing edge between them, else creates one), OR a single `node` (the packet appears there). ' +
-      'startLine/endLine light up lines in the step\'s target code node. `data` is the payload at that point, e.g. "Order{ id: 812, total: 49.00 }". parallel:true starts a step together with the previous one (a fork). ' +
-      'Returns flowId; then call canvas_play_flow. Use for "what happens to X after Y" questions.',
-    {
-      ...canvasArg,
-      title: z.string(),
-      description: z.string().optional(),
-      steps: z.array(z.object({
-        edge: z.string().optional().describe('Existing edge id.'),
-        from: z.string().optional().describe('Source node id (with `to`).'),
-        to: z.string().optional().describe('Target node id (with `from`).'),
-        node: z.string().optional().describe('Node id for a step without an edge.'),
-        startLine: line('First line to light up in the target code node.').optional(),
-        endLine: line('Last line (inclusive).').optional(),
-        caption: z.string().optional().describe('Short caption shown during the step.'),
-        data: z.string().optional().describe('Payload shape/value at this point.'),
-        parallel: z.boolean().optional(),
-        durationMs: z.number().int().min(100).max(30000).optional().describe('Default 1200.'),
-      })).min(1),
-      ...focusArg,
-    },
-    (a) =>
-      mutate(a, (cf, totals) => {
-        const created: string[] = [];
-        const steps: FlowStep[] = a.steps.map((st, i) => {
-          const where = `Step ${i + 1}`;
-          const modes = [st.edge !== undefined, st.from !== undefined || st.to !== undefined, st.node !== undefined].filter(Boolean).length;
-          if (modes !== 1) throw new Error(`${where}: give exactly one of edge, from+to, or node.`);
-          let targetId: string;
-          const out: FlowStep = { id: `step-${i + 1}` };
-          if (st.edge !== undefined) {
-            const e = cf.edges.find((x) => x.id === st.edge);
-            if (!e) throw new Error(`${where}: edge "${st.edge}" not found.`);
-            out.edge = e.id;
-            targetId = e.toNode;
-          } else if (st.from !== undefined || st.to !== undefined) {
-            if (!st.from || !st.to) throw new Error(`${where}: from and to must both be given.`);
-            requireNode(cf, st.from);
-            requireNode(cf, st.to);
-            let e = cf.edges.find((x) => x.fromNode === st.from && x.toNode === st.to);
-            if (!e) {
-              e = addEdge(cf, { fromNode: st.from, toNode: st.to });
-              created.push(e.id);
-            }
-            out.edge = e.id;
-            targetId = st.to;
-          } else {
-            targetId = requireNode(cf, st.node!).id;
-            out.node = targetId;
-          }
-          if (st.startLine !== undefined || st.endLine !== undefined) {
-            const n = requireNode(cf, targetId);
-            const s0 = st.startLine ?? st.endLine!;
-            const e0 = st.endLine ?? s0;
-            if (e0 < s0) throw new Error(`${where}: endLine ${e0} is before startLine ${s0}.`);
-            checkLine(n, s0, totalOf(totals, n), `${where} startLine`);
-            checkLine(n, e0, totalOf(totals, n), `${where} endLine`);
-            out.lines = [s0, e0];
-          }
-          if (st.caption) out.caption = st.caption;
-          if (st.data) out.data = st.data;
-          if (st.parallel) out.parallel = true;
-          if (st.durationMs) out.durationMs = st.durationMs;
-          return out;
-        });
-        const meta: CanvasMeta = { version: 1, ...cf.vsCanvas };
-        const max = (meta.flows ?? []).reduce((m, f) => Math.max(m, Number(/^flow-(\d+)$/.exec(f.id)?.[1] ?? 0)), 0);
-        const flowId = `flow-${max + 1}`;
-        meta.flows = [...(meta.flows ?? []), { id: flowId, title: a.title, ...(a.description && { description: a.description }), steps }];
-        cf.vsCanvas = meta;
-        const ids = new Set<string>();
-        for (const st of steps) {
-          if (st.node) ids.add(st.node);
-          const e = st.edge ? cf.edges.find((x) => x.id === st.edge) : undefined;
-          if (e) { ids.add(e.fromNode); ids.add(e.toNode); }
-        }
-        return { flowId, steps: steps.length, ...(created.length && { createdEdges: created }), focusIds: [...ids] };
-      }),
-  );
-
-  tool(
-    'canvas_play_flow',
-    'Play flow',
-    'Reveal the canvas and play a flow defined with canvas_add_flow (packet animation, line highlights, data chips, camera follow).',
-    {
-      ...canvasArg,
-      flowId: z.string().describe('Flow id returned by canvas_add_flow (also listed by canvas_list).'),
-      fromStep: z.number().int().min(0).optional().describe('0-based step to start at (default 0).'),
-    },
-    async (a) => {
-      const uri = await docs.target(a.canvas);
-      const f = await docs.read(uri);
-      const flow = f.vsCanvas?.flows?.find((x) => x.id === a.flowId);
-      if (!flow) throw new Error(`Flow "${a.flowId}" not found. Available: ${(f.vsCanvas?.flows ?? []).map((x) => x.id).join(', ') || 'none'}.`);
-      if (a.fromStep !== undefined && a.fromStep >= flow.steps.length) throw new Error(`fromStep ${a.fromStep} is beyond the ${flow.steps.length} steps.`);
-      await editor.reveal(uri);
-      editor.playFlow(uri, flow.id, a.fromStep);
-      return { canvas: docs.relPath(uri), playing: flow.id, title: flow.title, steps: flow.steps.length };
     },
   );
 

@@ -8,7 +8,7 @@
   import { tokenize, type ThemedToken } from '../lib/highlight';
   import CodeCard from '../ui/organisms/CodeCard.svelte';
   import { useLod } from '../lib/lod.svelte';
-  import { ui, type LineRange } from '../lib/ui.svelte';
+  import { ui } from '../lib/ui.svelte';
   import SideHandles from './SideHandles.svelte';
 
   let { id, data, selected }: NodeProps<Node<FlowData, 'code'>> = $props();
@@ -60,8 +60,6 @@
   });
   $effect(() => () => clearTimeout(pulseTimer));
 
-  const NO_LINES: readonly LineRange[] = [];
-  const activeLines = $derived(ui.activeLines.get(id) ?? NO_LINES);
   /** Every line gets a drag-out handle while the node is hovered, selected or the source of a drag. */
   const dragOut = $derived(selected || ui.hoverNodeId === id || ui.connectFrom === id);
 
@@ -83,7 +81,6 @@
   {selected}
   lod={lod.current}
   {pulseIds}
-  {activeLines}
   onlineclick={(line) => post({ type: 'openFile', path: node.file, line })}
 >
   {#snippet lineHandles(n: number)}

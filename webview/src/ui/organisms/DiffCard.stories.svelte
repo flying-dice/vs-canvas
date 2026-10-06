@@ -24,7 +24,7 @@
     args: {
       leftPath: 'data/order.0.json', rightPath: 'data/order.1.json',
       left: rc('order.0.json', json0), right: rc('order.1.json', json1),
-      leftTokens: null, rightTokens: null, selected: false, lit: false, lod: 'near', onlineclick: fn(),
+      leftTokens: null, rightTokens: null, selected: false, lod: 'near', onlineclick: fn(),
     },
   });
 </script>
@@ -35,7 +35,6 @@
 
 <Story name="JsonChange" {template} />
 <Story name="Selected" args={{ selected: true }} {template} />
-<Story name="Lit" args={{ lit: true }} {template} />
 <Story
   name="CodeChange"
   args={{

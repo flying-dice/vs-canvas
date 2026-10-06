@@ -68,8 +68,6 @@ export type ToWebview =
    * "show me these", e.g. MCP canvas_focus with nodeIds): frame the targets at a readable zoom.
    */
   | { type: 'focus'; nodeIds?: string[]; zoom?: boolean }
-  /** Start playing a flow (from MCP canvas_play_flow). `fromStep` defaults to 0. */
-  | { type: 'playFlow'; flowId: string; fromStep?: number }
   /** Result of a 'pickFile' request: the host has added the node (and edge); focus/select it. */
   | { type: 'select'; nodeIds: string[]; edit?: boolean };
 

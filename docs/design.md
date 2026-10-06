@@ -1,8 +1,8 @@
 # VS Canvas design language
 
 The canvas is part of VS Code, not a separate app. It borrows VS Code's colours, type and density so it feels
-native. It spends its boldness in exactly one place: **signal**, meaning the animated flow of data through
-code.
+native. It spends its boldness in exactly one place: **signal**, meaning the cyan that marks data in motion
+through code.
 
 ## Principles
 1. **Native first.** Every colour comes from a `--vscode-*` token, with a fallback for Storybook and the
@@ -19,9 +19,8 @@ code.
    - purple: domain boundary
 
    Neutral cards have no colour. A colour only appears when it says something.
-3. **One bold thing: signal.** A flow packet is the only glowing, luminous element in the product: a soft
-   cyan core with a blur halo that leaves a short fading trail along the edge path. Everything else is flat,
-   using 1px borders and at most one shadow level for floating chrome. Nothing else glows.
+3. **One bold thing: signal.** Cyan is reserved for data in motion: edges that carry data are
+   drawn in cyan. Everything else is flat, using 1px borders and at most one shadow level for floating chrome.
 4. **Meaning at every altitude.** Semantic zoom has three levels. Zoomed far out, cards show only their
    title, their state colour and a big glyph. At mid zoom they show the summary. Zoomed in, they show full
    content and code. Text is never rendered too small to read; it gives way to a simpler level instead.

@@ -27,8 +27,9 @@ Start with `canvas_create` (pick `kind`: `map`, `investigation`, `flow` or `note
    calls this"). It adds the code nodes, line-anchored edges and layout in one call. Prefer it to adding nodes
    one by one.
 2. `canvas_highlight_lines` on the lines that matter, with short labels.
-3. For data moving through the code, `canvas_add_flow` with one step per hop and the payload at that point in
-   `data` (e.g. `Order{ id: 812, total: 49.00 }`), then `canvas_play_flow`.
+3. For data moving through the code, open each hop and connect the call sites with line-anchored edges
+   (`canvas_connect`, `flow` colour), labelling each edge with the payload at that point (e.g.
+   `Order{ id: 812, total: 49.00 }`). Highlight the key lines.
 
 **Investigate a bug**
 1. `canvas_create` with `kind: "investigation"`.
@@ -48,7 +49,7 @@ Start with `canvas_create` (pick `kind`: `map`, `investigation`, `flow` or `note
 **Show data changing**
 `canvas_add_diff` with `left` (before) and `right` (after) files, e.g. `order.0.json` and `order.1.json`, placed
 under the code that made the change (`attachTo` the code node). Chain the next diff (`order.1.json` →
-`order.2.json`) beside it, then `canvas_add_flow` with steps whose `node` is each diff to play the timeline.
+`order.2.json`) beside it, connecting each diff to the next so the data's history reads left to right.
 
 **Draw a diagram**
 Use `canvas_add_diagram` to build a whole diagram in one call: `library` (`c4`, `flowchart`, `uml`, `erd`,

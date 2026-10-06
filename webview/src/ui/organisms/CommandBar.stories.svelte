@@ -17,7 +17,6 @@
         { id: 'd', title: 'Stack trace, order 812', icon: 'log' },
         { id: 'e', title: 'Payments', icon: 'service' },
       ],
-      flows: [{ id: 'order', title: 'Order to ledger', description: 'After the shopper clicks pay' }, { id: 'refund', title: 'Refund' }],
       canvases: [{ path: 'canvases/acme-shop.canvas.json', title: 'acme-shop map' }, { path: 'canvases/payments.canvas.json', title: 'Payments internals' }],
       actions: [
         { id: 'fix', label: 'Fix layout', icon: 'layout' },

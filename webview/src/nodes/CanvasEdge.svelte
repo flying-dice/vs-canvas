@@ -17,16 +17,13 @@
   import { canvasColor } from '../lib/colors';
   import { MARKER_GLYPHS, dashFor, edgeLook } from '../lib/shapes/markers';
   import { bracketed } from '../lib/shapes/content';
-  import FlowPacket from '../ui/atoms/FlowPacket.svelte';
-  import DataChip from '../ui/molecules/DataChip.svelte';
   import EdgeToolbarBar, { endsOf, endsPatch } from '../ui/molecules/EdgeToolbar.svelte';
 
   // The one edge type. Routing (curved / right-angle / straight), line style (solid / dashed / dotted) and end
   // markers (arrow, UML, crow's foot...) come from the document edge, else from its relation preset, else from the
   // JSON Canvas ends. Markers are drawn as <marker> defs inside this edge's own <g>, so they inherit the edge colour
   // (`--ec`: custom colour, selected, lint warning) from CSS and need no global registry. The stroke can draw itself
-  // in (CSS, via pathLength=1) when the wrapper carries `edge-enter`. It also carries the flow packet + data chip
-  // (playback), the selected-edge toolbar and inline label editing.
+  // in (CSS, via pathLength=1) when the wrapper carries `edge-enter`. It also carries the selected-edge toolbar and inline label editing.
   let {
     animated,
     interactionWidth = 20,
@@ -83,24 +80,6 @@
     ].filter((m) => m.kind !== 'none'),
   );
   const url = (key: string, kind: string) => (kind === 'none' ? undefined : `url(#${mk}-${key})`);
-
-  let pathEl = $state<SVGPathElement>();
-
-  // ---- playback: the first active step riding this edge (no allocation per frame) ----
-  const step = $derived.by(() => {
-    for (const s of ui.steps) if (s.edgeId === id) return s;
-    return undefined;
-  });
-  const chip = $derived.by(() => {
-    if (!step?.data || !pathEl) return null;
-    const len = pathEl.getTotalLength();
-    if (!(len > 0)) return null;
-    const p = pathEl.getPointAtLength(Math.min(1, Math.max(0, step.progress)) * len);
-    const z = viewport.current.zoom || 1;
-    // The second packet of a fork puts its chip below the line so the two never overlap.
-    const below = ui.steps.length > 1 && ui.steps[0] !== step;
-    return { x: p.x, y: p.y + (below ? 26 : -26) / Math.min(1, z) };
-  });
 
   // ---- edit label ----
   let editing = $state(false);
@@ -160,7 +139,6 @@
   {/if}
   <path
     {id}
-    bind:this={pathEl}
     d={path}
     class="svelte-flow__edge-path"
     pathLength={animated || look.lineStyle !== 'solid' ? undefined : 1}
@@ -183,16 +161,6 @@
     class="svelte-flow__edge-interaction"
     ondblclick={startEdit}
   />
-{/if}
-{#if step && pathEl}
-  <FlowPacket path={pathEl} progress={step.progress} zoom={viewport.current.zoom} />
-{/if}
-{#if chip && step?.data}
-  <EdgeLabel x={chip.x} y={chip.y} class="flow-chip" transparent>
-    <div class="chip-scale" style:transform={`scale(${Math.min(2.4, 1 / (viewport.current.zoom || 1))})`}>
-      <DataChip text={step.data} />
-    </div>
-  </EdgeLabel>
 {/if}
 {#if editing}
   <EdgeLabel x={labelX} y={labelY} transparent>
@@ -267,13 +235,6 @@
   }
   .mk.bg {
     fill: var(--vscode-editor-background, #1e1e1e);
-  }
-  :global(.flow-chip) {
-    z-index: 1000 !important;
-    pointer-events: none !important;
-  }
-  .chip-scale {
-    transform-origin: 50% 50%;
   }
   .lbl,
   .sub {

@@ -8,7 +8,7 @@ Canvases are JSON Canvas 1.0 files plus a few extensions. Schema: `schemas/canva
 {
   "nodes": [ /* draw order: later = on top. Groups FIRST. */ ],
   "edges": [ /* arrows */ ],
-  "vsCanvas": { "version": 1, "title": "Auth flow", "description": "...", "kind": "map", "pinned": true, "flows": [] }
+  "vsCanvas": { "version": 1, "title": "Auth flow", "description": "...", "kind": "map", "pinned": true }
 }
 ```
 
@@ -55,7 +55,7 @@ Diagram shapes come in six libraries; the full registry (ids, sizes, fields, rel
 
 - **Shape node**: `{ "type": "text", "variant": "shape", "shape": "c4.container", "text": "API\nHandles orders", "fields": { "technology": "Node.js" }, ... }`. `id` prefix `shape-`. `text` is the label (for c4/arch top-layout shapes the first line is the name, further lines the description). `fields` keys per shape: text fields are strings (`technology`, `stereotype`), list fields arrays of lines (`attributes`, `methods`, `values`, `actions`, ERD `columns` like `"id uuid PK"`, `"user_id uuid FK"`). Omit `width`/`height` to get the shape's default size; grow `height` for long text or many field lines (`text-overflow` estimates: header 32px + 20px per field line for UML/ERD compartments; label wraps in ~70% of the width for decision/terminator/io).
 - **Frames**: a `group` with `shape` (`c4.boundary`, `uml.package`, `arch.region`, `bpmn.pool`) plus `label` and `sublabel` (e.g. `"Software System"`). Same rules as groups (list first, ~40px padding, top 36px free).
-- **Data layer / timeline.** Put a row of diff nodes (`order.0.json` -> `order.1.json` -> `order.2.json`, each a `display: "diff"` file node with `diffFrom`) beneath the code nodes that produce each change, connect code -> diff ("writes") and diff -> diff ("then"), and let a flow visit them with `node` steps. MCP: `canvas_add_diff`. See `examples/acme-shop/canvases/order-data.canvas.json`.
+- **Data layer.** Put a row of diff nodes (`order.0.json` -> `order.1.json` -> `order.2.json`, each a `display: "diff"` file node with `diffFrom`) beneath the code nodes that produce each change, connect code -> diff ("writes") and diff -> diff ("then"). MCP: `canvas_add_diff`. See `examples/acme-shop/canvases/order-data.canvas.json`.
 - **Unknown shape ids** are kept and drawn as a plain card, but flagged by the `unknown-shape` lint error.
 - **Edge markers**: `fromMarker` / `toMarker` are one of `none arrow open-arrow triangle diamond diamond-filled circle crow-one crow-zero-one crow-many crow-one-many crow-zero-many`. They win over `fromEnd`/`toEnd`, which writers keep at the closest `none`/`arrow` so other JSON Canvas tools still draw something.
 - **`lineStyle`**: `solid` (default) `dashed` `dotted`. **`routing`**: `bezier` (default), `orthogonal` (right angles, 8px rounded corners; label at the path centre), `straight`.
@@ -63,10 +63,9 @@ Diagram shapes come in six libraries; the full registry (ids, sizes, fields, rel
 - `sublabel` on an edge is a second line under the label (C4 technology, e.g. `"JSON/HTTPS"`).
 - For diagrams use MCP `canvas_add_diagram`: one call builds nodes, layout, edges and frame.
 
-## Metadata and flows
+## Metadata
 
 `vsCanvas.kind`: `map` \| `investigation` \| `flow` \| `notes` (sidebar icon). `vsCanvas.pinned: true` lists the canvas first in the Canvases view and opens it with *Canvas: Open Pinned Map*.
-`vsCanvas.flows`: `[{ "id": "flow-1", "title", "description"?, "steps": [{ "id": "step-1", "edge"?: edgeId, "node"?: nodeId, "lines"?: [a, b], "caption"?, "data"?: "Order{ id: 812 }", "parallel"?: true, "durationMs"?: 1200 }] }]`. A step travels an edge (or appears at a node), lights the target `lines`, and shows `data` next to the packet; `parallel` starts it with the previous step (a fork). Play with MCP `canvas_play_flow`.
 
 ## Layout rules (what the linter checks)
 

@@ -15,13 +15,6 @@ describe('planCamera', () => {
     expect(v?.zoom).toBe(0.5);
   });
 
-  it('readableZoom moves to exactly that zoom when zoomed out further (no zoom pumping between steps)', () => {
-    const v = planCamera({ bounds: { x: 0, y: 0, width: 400, height: 200 }, size, viewport: at(0.2), all: false, readableZoom: 0.85 });
-    expect(v?.zoom).toBe(0.85);
-    // Already at a readable zoom and visible: stay put.
-    expect(planCamera({ bounds: { x: 100, y: 100, width: 200, height: 100 }, size, viewport: at(0.9), all: false, readableZoom: 0.85 })).toBeNull();
-  });
-
   it('fit frames visible targets, zooming in up to the max zoom', () => {
     const small = planCamera({ bounds: { x: 0, y: 0, width: 200, height: 100 }, size, viewport: at(0.19), all: false, fit: true });
     expect(small?.zoom).toBe(MOTION.cameraMaxZoom);

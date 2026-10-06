@@ -31,7 +31,6 @@ type Session = {
   queuedFocus: { nodeIds?: string[]; zoom?: boolean }[];
   /** 'select' replies wait for the document post that contains the new nodes. */
   queuedSelect: { nodeIds: string[]; edit?: boolean }[];
-  queuedPlay: { flowId: string; fromStep?: number }[];
   /** Canvases this one was opened from via openCanvas (oldest first, at most MAX_TRAIL). */
   trail: Trail;
 };
@@ -121,7 +120,7 @@ export class CanvasEditorProvider implements vscode.CustomTextEditorProvider, vs
   resolveCustomTextEditor(doc: vscode.TextDocument, panel: vscode.WebviewPanel): void {
     const key = doc.uri.toString();
     const s: Session = {
-      doc, panel, ready: false, pending: false, seq: 0, files: new Set(), queuedFocus: [], queuedSelect: [], queuedPlay: [],
+      doc, panel, ready: false, pending: false, seq: 0, files: new Set(), queuedFocus: [], queuedSelect: [],
       trail: this.pendingTrails.get(key) ?? [],
     };
     this.pendingTrails.delete(key);
@@ -182,14 +181,6 @@ export class CanvasEditorProvider implements vscode.CustomTextEditorProvider, vs
     for (const s of this.sessionsFor(uri)) {
       if (s.ready && !s.pending) this.send(s, { type: 'focus', nodeIds, zoom });
       else s.queuedFocus.push({ nodeIds, zoom });
-    }
-  }
-
-  /** Start a flow in the canvas's webview(s) (queued until the webview has the latest document). */
-  playFlow(uri: vscode.Uri, flowId: string, fromStep?: number) {
-    for (const s of this.sessionsFor(uri)) {
-      if (s.ready && !s.pending) this.send(s, { type: 'playFlow', flowId, ...(fromStep !== undefined && { fromStep }) });
-      else s.queuedPlay.push({ flowId, ...(fromStep !== undefined && { fromStep }) });
     }
   }
 
@@ -263,7 +254,6 @@ export class CanvasEditorProvider implements vscode.CustomTextEditorProvider, vs
       ...(s.trail.length && { breadcrumbs: s.trail }),
     });
     for (const f of s.queuedFocus.splice(0)) this.send(s, { type: 'focus', nodeIds: f.nodeIds, zoom: f.zoom });
-    for (const p of s.queuedPlay.splice(0)) this.send(s, { type: 'playFlow', ...p });
     for (const q of s.queuedSelect.splice(0)) this.send(s, { type: 'select', nodeIds: q.nodeIds, ...(q.edit && { edit: true }) });
   }
 

@@ -36,9 +36,8 @@ The server also provides prompts that encode good workflows: `map_repo`, `invest
 | `canvas_trace` | Build a caller/callee tree from the language server in one call |
 | `canvas_add_service`, `canvas_add_portal`, `canvas_add_group` | Domain maps and drill-down into other canvases |
 | `canvas_add_log`, `canvas_add_finding` | Stack traces and hypothesis/evidence cards for investigations |
-| `canvas_add_flow`, `canvas_play_flow` | Data-flow playback |
 | `canvas_add_note`, `canvas_add_sticky`, `canvas_add_text`, `canvas_add_mermaid`, `canvas_add_file_reference`, `canvas_add_link` | Explanations |
-| `canvas_add_diff` | Diff card of two files; chain them to show data changing over a timeline |
+| `canvas_add_diff` | Diff card of two files; chain them to show data changing over time |
 | `canvas_update_node`, `canvas_remove`, `canvas_clear`, `canvas_layout`, `canvas_lint` | Edit, auto-layout, lint and fix |
 | `canvas_get_state`, `canvas_focus` | Inspect, and move the viewer's camera |
 | `code_symbols`, `code_call_hierarchy`, `code_definition` | Raw language-server data |
@@ -75,7 +74,7 @@ out-of-range highlights, missing files). Per-repo settings go in `.canvaslint.js
 npm install
 npm run dev            # watch mode: rebuilds webview + extension on change
 npm run build          # one-off build: webview (vite) + extension (esbuild) + canvas-lint CLI
-npm test               # vitest: model, layout, trace, linter, playback, snapping
+npm test               # vitest: model, layout, trace, linter, snapping
 npm run check          # tsc + svelte-check
 npm run storybook      # component explorer on http://localhost:6006
 npx vite --port 5199   # webview in a browser; add ?demo=showcase or ?demo=agent
@@ -92,7 +91,7 @@ src/                 extension host: canvas documents + custom editor, MCP serve
 webview/src/         canvas UI (Svelte 5 + Svelte Flow), styled with VS Code theme tokens
   ui/                presentational components, Atomic Design (atoms/molecules/organisms), with stories
   nodes/             Svelte Flow adapters
-  lib/               camera, motion, playback, snapping, level-of-detail, search
+  lib/               camera, motion, snapping, level-of-detail, search
 schemas/, docs/      canvas JSON Schema, format guide for agents, design language
 examples/acme-shop/  demo codebase
 ```
